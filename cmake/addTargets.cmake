@@ -66,7 +66,6 @@ function(add_exported_executable)
 
     set(SINGLE_VALUE_ARGUMENTS
             TARGET
-            TYPE
             NAMESPACE
             EXPORT)
 
