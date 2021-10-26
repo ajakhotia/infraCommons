@@ -1,5 +1,3 @@
-find_package(CapnProto REQUIRED)
-
 include(${CMAKE_CURRENT_LIST_DIR}/addTargets.cmake)
 
 function(capnproto_generate_library)
@@ -26,6 +24,9 @@ function(capnproto_generate_library)
     if(NOT CGL_PARAM_SCHEMA_FILES)
         message(FATAL_ERROR "No schema files were provided. Skipping generation.")
     endif()
+
+    # Locate the Cap'n proto package
+    find_package(CapnProto REQUIRED)
 
     # Acquire the paths to capnp tool, run-time library and interface directory.
     get_target_property(CAPNP_TOOL_PATH CapnProto::capnp_tool LOCATION)
