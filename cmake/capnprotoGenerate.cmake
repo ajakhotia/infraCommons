@@ -1,4 +1,4 @@
-include(${CMAKE_CURRENT_LIST_DIR}/addTargets.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/exportedTargets.cmake)
 
 function(capnproto_generate_library)
 
@@ -13,7 +13,8 @@ function(capnproto_generate_library)
     set(MULTI_VALUE_ARGUMENTS
             SCHEMA_FILES
             COMPILE_FEATURES
-            COMPILE_OPTIONS)
+            COMPILE_OPTIONS
+            COMPILE_DEFINITIONS)
 
     cmake_parse_arguments("CGL_PARAM"
             "${OPTIONS_ARGUMENTS}"
@@ -91,23 +92,19 @@ function(capnproto_generate_library)
                 ${CGL_PARAM_NAMESPACE}
             EXPORT
                 ${CGL_PARAM_EXPORT}
-            SRC_FILES
+            SOURCES
                 ${SCHEMA_SOURCE_FILENAME_LIST}
-            PUBLIC_INCLUDE_DIR
+            HEADERS
+                PUBLIC ${SCHEMA_HEADER_FILENAME_LIST}
+            INCLUDE_DIRECTORIES
                 ${CMAKE_CURRENT_BINARY_DIR}/include
-            PRIVATE_INCLUDE_DIR
-                ""
-            PUBLIC_LINK_LIBRARIES
-                CapnProto::capnp
-            PRIVATE_LINK_LIBRARIES
-                ""
-            PUBLIC_HEADERS
-                ${SCHEMA_HEADER_FILENAME_LIST}
-            PRIVATE_HEADERS
-                ""
+            LINK_LIBRARIES
+                PUBLIC CapnProto::capnp
             COMPILE_FEATURES
                 ${CGL_PARAM_COMPILE_FEATURES}
             COMPILE_OPTIONS
-                ${CGL_PARAM_COMPILE_OPTIONS})
+                ${CGL_PARAM_COMPILE_OPTIONS}
+            COMPILE_DEFINITIONS
+                ${CGL_PARAM_COMPILE_DEFINITIONS})
 
 endfunction()
