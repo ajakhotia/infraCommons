@@ -1,3 +1,36 @@
+function(target_add_exported_header)
+    set(OPTIONS_ARGUMENTS "")
+    set(SINGLE_VALUE_ARGUMENTS TARGET)
+    set(MULTI_VALUE_ARGUMENTS HEADERS)
+
+    cmake_parse_arguments("TAEH_PARAM"
+            "${OPTIONS_ARGUMENTS}"
+            "${SINGLE_VALUE_ARGUMENTS}"
+            "${MULTI_VALUE_ARGUMENTS}"
+            ${ARGN})
+
+    set(KEYWORD_LIST INTERFACE PUBLIC PRIVATE)
+
+    foreach(ITEM ${TAEH_PARAM_HEADERS})
+        if(ITEM IN_LIST KEYWORD_LIST)
+            list(APPEND PROCESSED_LIST ${ITEM})
+            continue()
+        endif()
+
+        if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${ITEM})
+            list(APPEND PROCESSED_LIST $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${ITEM}>)
+        else()
+            list(APPEND PROCESSED_LIST $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/${ITEM}>)
+        endif()
+
+        list(APPEND PROCESSED_LIST $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${ITEM}>)
+
+    endforeach()
+
+    target_sources(${TAEH_PARAM_TARGET} ${PROCESSED_LIST})
+endfunction()
+
+
 function(add_exported_library)
 
     set(OPTIONS_ARGUMENTS "")
@@ -23,7 +56,10 @@ function(add_exported_library)
             "${MULTI_VALUE_ARGUMENTS}"
             ${ARGN})
 
-    add_library(${AEL_PARAM_TARGET} ${AEL_PARAM_TYPE} ${AEL_PARAM_SOURCES})
+    add_library(${AEL_PARAM_TARGET} ${AEL_PARAM_TYPE})
+
+    target_sources(${AEL_PARAM_TARGET} PRIVATE ${AEL_PARAM_SOURCES})
+    target_add_exported_header(TARGET ${AEL_PARAM_TARGET} HEADERS ${AEL_PARAM_HEADERS})
 
     if(AEL_PARAM_NAMESPACE)
         add_library(${AEL_PARAM_NAMESPACE}${AEL_PARAM_TARGET} ALIAS ${AEL_PARAM_TARGET})
