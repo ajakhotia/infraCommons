@@ -1,2 +1,2 @@
-# cmakeUtilities
-Utilities for better CMake usage
+# infraCommons
+Home to common files used to setup projects.
