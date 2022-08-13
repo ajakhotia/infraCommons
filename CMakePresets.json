@@ -8,8 +8,8 @@
 
     "configurePresets": [
         {
-            "name": "ninja",
-            "displayName": "ninja",
+            "name": "basic",
+            "displayName": "basic",
             "generator": "Ninja",
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": {
@@ -23,13 +23,10 @@
                 "CMAKE_INSTALL_PREFIX": {
                     "type": "PATH",
                     "value": "$env{HOME}/opt/${presetName}"
-                },
-                "CMAKE_MAKE_PROGRAM": {
-                    "type": "FILEPATH",
-                    "value": "/usr/bin/ninja"
                 }
             },
-            "hidden": true
+            "hidden": true,
+            "binaryDir": "${sourceDir}/build/${presetName}"
         },
         {
             "name": "debug",
@@ -76,8 +73,8 @@
             "hidden": true
         },
         {
-            "name": "ci-static-prefix",
-            "displayName": "ci-static-prefix",
+            "name": "ci-static-deps-prefix",
+            "displayName": "ci-static-deps-prefix",
             "inherits": ["static"],
             "cacheVariables": {
                 "CMAKE_PREFIX_PATH": {
@@ -88,8 +85,8 @@
             "hidden": true
         },
         {
-            "name": "ci-shared-prefix",
-            "displayName": "ci-shared-prefix",
+            "name": "ci-shared-deps-prefix",
+            "displayName": "ci-shared-deps-prefix",
             "inherits": ["shared"],
             "cacheVariables": {
                 "CMAKE_PREFIX_PATH": {
@@ -100,34 +97,30 @@
             "hidden": true
         },
         {
-            "name": "ci-gnu-12-static-debug",
+            "name": "ci-gnu-12-static-debug-config",
             "displayName": "ci-gnu-12-static-debug",
             "toolchainFile": "${sourceDir}/toolchains/gnu-12.cmake",
-            "inherits": ["ninja", "ci-static-prefix", "debug"],
-            "binaryDir": "${sourceDir}/build/${presetName}",
-            "hidden": true
+            "inherits": ["basic", "ci-static-deps-prefix", "debug"]
         },
         {
-            "name": "ci-clang-14-shared-release",
+            "name": "ci-clang-14-shared-release-config",
             "displayName": "ci-clang-14-shared-release",
             "toolchainFile": "${sourceDir}/toolchains/clang-14.cmake",
-            "inherits": ["ninja", "ci-shared-prefix", "release"],
-            "binaryDir": "${sourceDir}/build/${presetName}",
-            "hidden": true
+            "inherits": ["basic", "ci-shared-deps-prefix", "release"]
         }
     ],
 
     "buildPresets": [
         {
-            "name": "ci-gnu-12-static-debug",
-            "displayName": "ci-gnu-12-static-debug",
-            "configurePreset": "ci-gnu-12-static-debug"
+            "name": "ci-gnu-12-static-debug-build",
+            "displayName": "ci-gnu-12-static-debug-build",
+            "configurePreset": "ci-gnu-12-static-debug-config"
         },
 
         {
-            "name": "ci-clang-14-shared-release",
-            "displayName": "ci-clang-14-shared-release",
-            "configurePreset": "ci-clang-14-shared-release"
+            "name": "ci-clang-14-shared-release-build",
+            "displayName": "ci-clang-14-shared-release-build",
+            "configurePreset": "ci-clang-14-shared-release-config"
         }
     ],
 
