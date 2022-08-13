@@ -61,6 +61,13 @@ function(add_exported_library)
             "${MULTI_VALUE_ARGUMENTS}"
             ${ARGN})
 
+    if((AEL_PARAM_TYPE) AND (NOT AEL_PARAM_TYPE STREQUAL "INTERFACE"))
+        message(AUTHOR_WARNING "Prefer to not specify TYPE for libraries other "
+                "than for those which are pure INTERFACE / header-only. This "
+                "allows the user to request SHARED / STATIC builds using the "
+                "-DBUILD_SHARED_LIBS:BOOL=ON/OFF on the commandline as "
+                "necessary.")
+    endif()
 
     add_library(${AEL_PARAM_TARGET} ${AEL_PARAM_TYPE})
 
@@ -120,9 +127,9 @@ function(add_exported_library)
     endif()
 
     # The trailing / is important to avoid having install path that look like <prefix>/include/include.
-    install(DIRECTORY ${AEL_PARAM_INCLUDE_DIRECTORIES}/
-            DESTINATION include
-            FILES_MATCHING PATTERN "*.h*")
+    install(DIRECTORY ${AEL_PARAM_INCLUDE_DIRECTORIES}/ TYPE INCLUDE
+            PATTERN "*.capnp" EXCLUDE
+            PATTERN "*.capnp.c++" EXCLUDE)
 
     install(TARGETS ${AEL_PARAM_TARGET} EXPORT ${AEL_PARAM_EXPORT})
 
