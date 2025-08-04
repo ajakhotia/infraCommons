@@ -27,14 +27,14 @@ def compare_directories(template_dir: str, client_dir: str, ignore_files: Set[st
     # Get all files recursively in both directories
     template_files = {f.relative_to(template_dir_path) for f in template_dir_path.rglob('*') if f.is_file()}
     client_files = {f.relative_to(client_dir_path) for f in client_dir_path.rglob('*') if f.is_file()}
-    
-    # Remove ignored files from both sets
-    template_files = {f for f in template_files if f.name not in ignore_files}
-    client_files = {f for f in client_files if f.name not in ignore_files}
 
+    # Remove ignored files from both sets
     ignored_in_client = {f for f in client_files if f.name in ignore_files}
     if ignored_in_client:
         print("Ignoring files:", ", ".join(sorted(f.name for f in ignored_in_client)))
+
+    template_files = {f for f in template_files if f.name not in ignore_files}
+    client_files = {f for f in client_files if f.name not in ignore_files}
 
     # Find common files
     common_files = template_files & client_files
