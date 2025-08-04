@@ -31,7 +31,11 @@ def compare_directories(template_dir: str, client_dir: str, ignore_files: Set[st
     # Remove ignored files from both sets
     template_files = {f for f in template_files if f.name not in ignore_files}
     client_files = {f for f in client_files if f.name not in ignore_files}
-    
+
+    ignored_in_client = {f for f in client_files if f.name in ignore_files}
+    if ignored_in_client:
+        print("Ignoring files:", ", ".join(sorted(f.name for f in ignored_in_client)))
+
     # Find common files
     common_files = template_files & client_files
     
@@ -112,9 +116,6 @@ def main() -> int:
     if not args.no_default_ignores:
         ignore_files.update(DEFAULT_IGNORE_FILES)
     ignore_files.update(parse_ignore_files(args.ignore_files))
-    
-    if ignore_files:
-        print("Ignoring files:", ", ".join(sorted(ignore_files)))
     
     success = compare_directories(args.template_directory, args.client_directory, ignore_files)
     return 0 if success else 1
