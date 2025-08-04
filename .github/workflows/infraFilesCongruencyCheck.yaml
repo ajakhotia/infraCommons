@@ -16,4 +16,4 @@ jobs:
           path: templateRepository
           ref: main
 
-      - run: python3 templateRepository/ci/congruency_test.py -t templateRepository -c clientRepository
+      - run: python3 templateRepository/ci/congruency_test.py -t templateRepository -c clientRepository --apply-diffs
