@@ -1,8 +1,10 @@
-import sys
-import difflib
-import argparse
 from pathlib import Path
 from typing import Set, List
+import argparse
+import difflib
+import subprocess
+import sys
+
 
 DEFAULT_IGNORE_FILES = {
     'LICENSE',
@@ -90,10 +92,54 @@ def compare_directories(
                     tofile=str(client_file_path)
                 ))
                 diffs.append(diff)
-                print(f"\nDifferences in {relative_file_path}:")
-                print(diff)
+                print(f"\nFound differences in {relative_file_path}:")
 
     return all_identical, diffs
+
+
+def apply_diffs_to_client(diffs: List[str], client_dir: str) -> bool:
+    """
+    Apply a list of diffs to the client directory using git apply.
+
+    Args:
+        diffs: List of unified diff strings to apply
+        client_dir: Path to the client directory where diffs should be applied
+
+    Returns:
+        bool: True if all diffs were applied successfully, False otherwise
+    """
+    if not diffs:
+        print("No diffs to apply")
+        return True
+
+    try:
+        # Create a temporary file with all diffs
+        patch_file_path = Path('temp.patch')
+        with patch_file_path.open('w') as patch_file:
+            for diff in diffs:
+                patch_file.write(diff)
+
+        # Apply the patch using git apply
+        result = subprocess.run(
+            ['git', 'apply', '-R', '--unsafe-paths', '-p0', patch_file_path],
+            capture_output=True,
+            text=True
+        )
+
+        # Clean up the temporary patch file
+        patch_file_path.unlink()
+
+        if result.returncode != 0:
+            print("Error applying patches:")
+            print(result.stderr)
+            return False
+
+        print("Successfully applied all patches")
+        return True
+
+    except Exception as e:
+        print(f"Error while applying patches: {str(e)}")
+        return False
 
 
 def parse_ignore_list(ignore_list: str) -> Set[str]:
@@ -140,6 +186,12 @@ def parse_arguments():
         help='Disable default ignore lists for both files and directories'
     )
 
+    parser.add_argument(
+        '--apply-diffs',
+        action='store_true',
+        help='Apply the differences to the client directory using git apply'
+    )
+
     return parser.parse_args()
 
 
@@ -163,7 +215,16 @@ def main() -> int:
         ignore_files,
         ignore_dirs)
 
-    return 0 if success else 1
+    if success:
+        print(f"Success. {args.template_directory} and {args.client_directory} match")
+    elif args.apply_diffs:
+        success = apply_diffs_to_client(diffs, args.client_directory)
+
+    if not success:
+        print("Failed to establish congruency / apply diffs")
+        return 1
+
+    return 0
 
 
 if __name__ == "__main__":
