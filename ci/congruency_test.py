@@ -6,11 +6,15 @@ from typing import Set
 
 
 DEFAULT_IGNORE_FILES = {
-    "README.md",
-    "ReadMe.md",
-    "readme.md",
-    "readMe.md",
-    "Readme.md"
+    'LICENSE',
+    'License.md',
+    'license.md',
+    'license.txt',
+    'README.md',
+    'ReadMe.md',
+    'Readme.md',
+    'readme.md',
+    'readMe.md',
 }
 
 
