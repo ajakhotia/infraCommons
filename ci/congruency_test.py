@@ -15,6 +15,7 @@ DEFAULT_IGNORE_FILES = {
     'Readme.md',
     'readme.md',
     'readMe.md',
+    '.gitignore',
 }
 
 
