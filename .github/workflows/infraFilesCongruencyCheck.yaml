@@ -22,7 +22,8 @@ jobs:
       - name: "Check for changes"
         id: check_for_changes
         run: |
-          if [[ -n "$(git status --porcelain || exit 1)" ]]; then
+          cd clientRepository
+          if [[ -n "$(git status --porcelain)" ]]; then
             echo "has_changes=true" >> $GITHUB_OUTPUT
           else
             echo "has_changes=false" >> $GITHUB_OUTPUT
