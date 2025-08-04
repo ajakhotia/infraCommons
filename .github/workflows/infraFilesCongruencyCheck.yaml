@@ -54,4 +54,4 @@ jobs:
           --head $branch_name \
           --title "Automated Update" \
           --body "This PR was automatically created by infraFilesCongruencyCheck GitHub Action to ensure that
-                  core infra files remain synchronized with naksh-io/infraCommns" \
+                  core infra files remain synchronized with naksh-io/infraCommons" \
