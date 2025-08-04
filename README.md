@@ -5,14 +5,8 @@ source of truth for shared infrastructure components.
 
 ## Overview
 
-infraCommons contains essential configuration and utility files that are used by various client projects. 
-The repository includes:
-
-- CMake configurations
-- Clang tool configurations
-- Other shared infrastructure files
-
-This repository is language agnostic
+infraCommons contains essential configuration and utility files that are used by various client projects.
+This repository is expected to be language agnostic
 
 ## Usage
 
