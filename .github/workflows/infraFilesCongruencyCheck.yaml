@@ -22,6 +22,7 @@ jobs:
       - name: "Check for changes"
         id: check_for_changes
         run: |
+          set -e
           if [[ -n "$(git status --porcelain)" ]]; then
             echo "has_changes=true" >> $GITHUB_OUTPUT
           else
