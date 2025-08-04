@@ -1,0 +1,19 @@
+name: infraFilesCongruencyCheck
+
+on: [push]
+
+jobs:
+  congruency-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: clientRepository
+
+      - uses: actions/checkout@v4
+        with:
+          repository: naksh-io/infraCommons
+          path: templateRepository
+          ref: main
+
+      - run: python3 templateRepository/ci/congruency_test.py -t template -c clientRepository
