@@ -29,12 +29,6 @@ The congruency test implementation is provided in `ci/congruency_test.py`. This 
 - Ignore specified files during comparison
 - Show detailed diffs for any inconsistencies found
 
-## Directory Structure
-
-- `.clangTools` - Clang-related configurations
-- `ci` - Continuous Integration templates and configurations
-- `cmake` - CMake build system files and modules
-
 ## License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
