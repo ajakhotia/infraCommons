@@ -87,9 +87,10 @@ def compare_directories(
             if template_content != client_content:
                 all_identical = False
                 diff = ''.join(difflib.unified_diff(
-                    template_content, client_content,
+                    client_content,
+                    template_content,
+                    tofile=str(client_file_path),
                     fromfile=str(template_file_path),
-                    tofile=str(client_file_path)
                 ))
                 diffs.append(diff)
                 print(f"\nFound differences in {relative_file_path}:")
@@ -121,7 +122,7 @@ def apply_diffs_to_client(diffs: List[str], client_dir: str) -> bool:
 
         # Apply the patch using git apply
         result = subprocess.run(
-            ['git', 'apply', '-R', '--unsafe-paths', '-p0', patch_file_path],
+            ['git', 'apply', '--unsafe-paths', '-p0', patch_file_path],
             capture_output=True,
             text=True
         )
