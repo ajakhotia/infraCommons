@@ -5,7 +5,6 @@ import difflib
 import subprocess
 import sys
 
-
 DEFAULT_IGNORE_FILES = {
     'LICENSE',
     'License.md',
@@ -34,7 +33,6 @@ def compare_directories(
         client_dir: str,
         ignore_files: Set[str],
         ignore_dirs: Set[str]) -> tuple[bool, List[str]]:
-
     # Convert paths to Path objects
     template_dir_path = Path(template_dir)
     client_dir_path = Path(client_dir)
@@ -98,13 +96,12 @@ def compare_directories(
     return all_identical, diffs
 
 
-def apply_diffs_to_client(diffs: List[str], client_dir: str) -> bool:
+def apply_diffs_to_client(diffs: List[str]) -> bool:
     """
     Apply a list of diffs to the client directory using git apply.
 
     Args:
         diffs: List of unified diff strings to apply
-        client_dir: Path to the client directory where diffs should be applied
 
     Returns:
         bool: True if all diffs were applied successfully, False otherwise
@@ -219,7 +216,7 @@ def main() -> int:
     if success:
         print(f"Success. {args.template_directory} and {args.client_directory} match")
     elif args.apply_diffs:
-        success = apply_diffs_to_client(diffs, args.client_directory)
+        success = apply_diffs_to_client(diffs)
 
     if not success:
         print("Failed to establish congruency / apply diffs")
