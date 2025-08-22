@@ -1,3 +1,5 @@
+[![infraFilesCongruencyCheck](https://github.com/ajakhotia/infraCommons/actions/workflows/infraFilesCongruencyCheck.yaml/badge.svg)](https://github.com/ajakhotia/infraCommons/actions/workflows/infraFilesCongruencyCheck.yaml)
+
 # infraCommons
 
 A centralized repository of common files shared across multiple projects. This repository serves as the single 
