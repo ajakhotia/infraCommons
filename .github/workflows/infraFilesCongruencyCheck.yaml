@@ -8,7 +8,7 @@ on:
       - main
 
 jobs:
-  congruency-check:
+  congruencyCheck:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
