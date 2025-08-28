@@ -1,4 +1,4 @@
-[![infraFilesCongruencyCheck](https://github.com/ajakhotia/infraCommons/actions/workflows/infraFilesCongruencyCheck.yaml/badge.svg)](https://github.com/ajakhotia/infraCommons/actions/workflows/infraFilesCongruencyCheck.yaml)
+[![infra-congruency-check](https://github.com/ajakhotia/infraCommons/actions/workflows/infra-congruency-check.yaml/badge.svg)](https://github.com/ajakhotia/infraCommons/actions/workflows/infra-congruency-check.yaml)
 
 # infraCommons
 
