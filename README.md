@@ -31,6 +31,22 @@ The congruency test implementation is provided in `ci/congruency_test.py`. This 
 - Ignore specified files during comparison
 - Show detailed diffs for any inconsistencies found
 
+## Tools
+### Clang Tidy
+Clang Tidy configs are generated using the following command:
+```shell
+clang-tidy-19 \
+  -checks='*,-clang-analyzer-alpha.*,-google-*,-llvm-*,-llvmlibc-*,-abseil-*,-fuchsia-*,-zircon-*,-objc-*,-android-*' \
+  -warnings-as-errors='bugprone-*,cert-*,clang-analyzer-*,cppcoreguidelines-*,modernize-*,performance-*,portability-*,readability-*,security-*' \
+  --dump-config > tools/clang-tidy-19
+```
+
+### Clang Format
+Clang Format configs are generated using the following command:
+```shell
+clang-format-19 -style='{BasedOnStyle: GNU}' -dump-config > tools/clang-format-19
+```
+
 ## License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
