@@ -44,7 +44,7 @@ clang-tidy-19 \
 ### Clang Format
 Clang Format configs are generated using the following command:
 ```shell
-clang-format-19 -style='{BasedOnStyle: GNU}' -dump-config > tools/clang-format-19
+clang-format-19 -style=GNU -dump-config > tools/clang-format-19
 ```
 
 ## License
