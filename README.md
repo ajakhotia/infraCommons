@@ -36,9 +36,9 @@ The congruency test implementation is provided in `ci/congruency_test.py`. This 
 Clang Tidy configs are generated using the following command:
 ```shell
 clang-tidy-19 \
-  -checks='*,-clang-analyzer-alpha.*,-google-*,-llvm-*,-llvmlibc-*,-abseil-*,-fuchsia-*,-zircon-*,-objc-*,-android-*' \
-  -warnings-as-errors='bugprone-*,cert-*,clang-analyzer-*,cppcoreguidelines-*,modernize-*,performance-*,portability-*,readability-*,security-*' \
-  --dump-config > tools/clang-tidy-19
+   -checks='*,-clang-analyzer-alpha.*,-google-*,-llvm-*,-llvmlibc-*,-abseil-*,-fuchsia-*,-zircon-*,-objc-*,-android-*,-modernize-use-trailing-return-type,-misc-include-cleaner,-boost-use-ranges'   \
+   -warnings-as-errors='bugprone-*,cert-*,clang-analyzer-*,cppcoreguidelines-*,modernize-*,performance-*,portability-*,readability-*,security-*'   \
+   --dump-config > tools/clang-tidy-19
 ```
 
 ### Clang Format
