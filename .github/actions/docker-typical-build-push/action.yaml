@@ -22,6 +22,20 @@ inputs:
     required: false
     description: "Build arguments to pass to docker."
 
+  username:
+    required: true
+    description: "Name of the user"
+    default: ${{ github.actor }}
+
+  password:
+    required: true
+    description: "Token to use to authenticate with the registry"
+
+  registry:
+    required: true
+    description: "Registry to use"
+    default: ghcr.io
+
 runs:
   using: "composite"
   steps:
@@ -36,9 +50,9 @@ runs:
     - name: setup-login
       uses: docker/login-action@v3
       with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.username }}
+        password: ${{ inputs.password }}
 
     - name: normalized-repository-name
       id: normalized-repository-name
