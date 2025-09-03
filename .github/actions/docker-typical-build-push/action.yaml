@@ -56,25 +56,25 @@ runs:
 
     - name: normalized-repository-name
       id: normalized-repository-name
-      uses: ./../normalize
+      uses: ajakhotia/infraCommons/.github/actions/normalize@main
       with:
         string: ${{ github.repository }}
 
     - name: normalized-target-stage
       id: normalized-target-stage
-      uses: ./../normalize
+      uses: ajakhotia/infraCommons/.github/actions/normalize@main
       with:
         string: ${{ inputs.target-stage }}
 
     - name: normalized-upstream-stage
       id: normalized-upstream-stage
-      uses: ./../normalize
+      uses: ajakhotia/infraCommons/.github/actions/normalize@main
       with:
         string: ${{ inputs.upstream-stage }}
 
     - name: normalized-build-name
       id: normalized-build-name
-      uses: ./../normalize
+      uses: ajakhotia/infraCommons/.github/actions/normalize@main
       with:
         string: ${{ inputs.build-name }}
 
