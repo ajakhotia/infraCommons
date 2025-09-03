@@ -10,9 +10,15 @@ inputs:
     required: true
     description: "Stage to build."
 
-  upstream-stage:
+  target-stage-id:
+    required: true
+    description: "Identity of the stage in caches / published docker image. These ids should be 
+                  consistent across workflows for effective caching."
+
+  upstream-stage-id:
     required: false
-    description: "Name of the upstream stage that the target stage depends on."
+    description: "Identity upstream stage that the target-stage depends on. These ids should be 
+                  consistent across workflows for effective caching."
 
   build-name:
     required: true
@@ -60,17 +66,17 @@ runs:
       with:
         string: ${{ github.repository }}
 
-    - name: normalized-target-stage
-      id: normalized-target-stage
+    - name: normalized-target-stage-id
+      id: normalized-target-stage-id
       uses: ajakhotia/infraCommons/.github/actions/normalize@main
       with:
-        string: ${{ inputs.target-stage }}
+        string: ${{ inputs.target-stage-id }}
 
-    - name: normalized-upstream-stage
-      id: normalized-upstream-stage
+    - name: normalized-upstream-stage-id
+      id: normalized-upstream-stage-id
       uses: ajakhotia/infraCommons/.github/actions/normalize@main
       with:
-        string: ${{ inputs.upstream-stage }}
+        string: ${{ inputs.upstream-stage-id }}
 
     - name: normalized-build-name
       id: normalized-build-name
@@ -91,7 +97,7 @@ runs:
       id: docker-metadata
       uses: docker/metadata-action@v5
       with:
-        images: ${{ inputs.registry }}/${{ steps.normalized-repository-name.outputs.string }}-${{ steps.normalized-target-stage.outputs.string }}-${{ steps.normalized-build-name.outputs.string }}
+        images: ${{ inputs.registry }}/${{ steps.normalized-repository-name.outputs.string }}-${{ steps.normalized-target-stage-id.outputs.string }}-${{ steps.normalized-build-name.outputs.string }}
         tags: |
           type=raw,value=${{ github.sha }}
           type=raw,value=latest,enable=${{ github.ref_name == 'main' }}
@@ -107,9 +113,9 @@ runs:
         tags: ${{ steps.docker-metadata.outputs.tags }}
         labels: ${{ steps.docker-metadata.outputs.labels }}
         cache-from: |
-          ${{ inputs.upstream-stage != '' && format('type=registry,mode=max,ref={0}/{1}-{2}-{3}:buildcache', inputs.registry, steps.normalized-repository-name.outputs.string, steps.normalized-upstream-stage.outputs.string, steps.normalized-build-name.outputs.string) || '' }}
-          type=registry,mode=max,ref=${{ inputs.registry }}/${{ steps.normalized-repository-name.outputs.string }}-${{ steps.normalized-target-stage.outputs.string }}-${{ steps.normalized-build-name.outputs.string }}:buildcache
+          ${{ inputs.upstream-stage-id != '' && format('type=registry,mode=max,ref={0}/{1}-{2}-{3}:buildcache', inputs.registry, steps.normalized-repository-name.outputs.string, steps.normalized-upstream-stage-id.outputs.string, steps.normalized-build-name.outputs.string) || '' }}
+          type=registry,mode=max,ref=${{ inputs.registry }}/${{ steps.normalized-repository-name.outputs.string }}-${{ steps.normalized-target-stage-id.outputs.string }}-${{ steps.normalized-build-name.outputs.string }}:buildcache
         cache-to: |
-          type=registry,mode=max,ref=${{ inputs.registry }}/${{ steps.normalized-repository-name.outputs.string }}-${{ steps.normalized-target-stage.outputs.string }}-${{ steps.normalized-build-name.outputs.string }}:buildcache
+          type=registry,mode=max,ref=${{ inputs.registry }}/${{ steps.normalized-repository-name.outputs.string }}-${{ steps.normalized-target-stage-id.outputs.string }}-${{ steps.normalized-build-name.outputs.string }}:buildcache
         build-args: |
           ${{ inputs.build-args }}
