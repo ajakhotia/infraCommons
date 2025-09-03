@@ -42,25 +42,25 @@ runs:
 
     - name: normalized-repository-name
       id: normalized-repository-name
-      uses: ./.github/actions/normalize
+      uses: ./../normalize
       with:
         string: ${{ github.repository }}
 
     - name: normalized-target-stage
       id: normalized-target-stage
-      uses: ./.github/actions/normalize
+      uses: ./../normalize
       with:
         string: ${{ inputs.target-stage }}
 
     - name: normalized-upstream-stage
       id: normalized-upstream-stage
-      uses: ./.github/actions/normalize
+      uses: ./../normalize
       with:
         string: ${{ inputs.upstream-stage }}
 
     - name: normalized-build-name
       id: normalized-build-name
-      uses: ./.github/actions/normalize
+      uses: ./../normalize
       with:
         string: ${{ inputs.build-name }}
 
