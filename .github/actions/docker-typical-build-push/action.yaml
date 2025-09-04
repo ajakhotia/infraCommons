@@ -101,7 +101,7 @@ runs:
       shell: bash
       run: |
         echo "image_name=${{ format(
-          '{0}/{1}-{2}-{3}',
+          '{0}/{1}/{2}/{3}',
           inputs.registry,
           steps.normalized-repository-name.outputs.string,
           steps.normalized-build-name.outputs.string,
