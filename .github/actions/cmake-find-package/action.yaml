@@ -3,14 +3,6 @@ description:  |
   Validates presence and findability of a library in a docker image using ajakhotia/importTester
   
 inputs:
-  os_base:
-    description: 'Base image, e.g. ubuntu:22.04'
-    required: true
-
-  toolchain:
-    description: 'Toolchain, e.g. linux-gnu-12'
-    required: true
-
   library-name:
     description: 'Library to test. This is forwarded as to find_package(... REQUIRED) call in cmake'
     required: true
