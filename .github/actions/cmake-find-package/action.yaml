@@ -62,5 +62,5 @@ runs:
         cmake                                                                                                           \
           -S /tmp/importTester-src                                                                                      \
           -B /tmp/importTester-build                                                                                    \
-          -DCMAKE_PREFIX_PATH:STRING=${{ inputs.prefix-path }}                                                          \
-          -DIMPORT_TESTER_PACKAGE_LIST:STRING=${{ inputs.library-name }}"
+          -DCMAKE_PREFIX_PATH:STRING="${{ inputs.prefix-path }}"                                                        \
+          -DIMPORT_TESTER_PACKAGE_LIST:STRING="${{ inputs.library-name }}""
