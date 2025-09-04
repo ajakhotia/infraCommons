@@ -93,11 +93,39 @@ runs:
         include: 'v*'
         skip-unshallow: 'true'
 
+    - name: image-cache-names
+      id: image-cache-names
+      shell: bash
+      run: |
+        echo "image_name=${{ format(
+          '{0}/{1}-{2}-{3}',
+          inputs.registry,
+          steps.normalized-repository-name.outputs.string,
+          steps.normalized-target-stage-id.outputs.string,
+          steps.normalized-build-name.outputs.string
+        ) }}" >> "$GITHUB_OUTPUT"
+    
+        echo "target_cache=${{ format(
+          'type=registry,mode=max,ref={0}/{1}-{2}-{3}:buildcache',
+          inputs.registry,
+          steps.normalized-repository-name.outputs.string,
+          steps.normalized-target-stage-id.outputs.string,
+          steps.normalized-build-name.outputs.string
+        ) }}" >> "$GITHUB_OUTPUT"
+    
+        echo "upstream_cache=${{ steps.normalized-upstream-stage-id.outputs.string != '' && format(
+          'type=registry,mode=max,ref={0}/{1}-{2}-{3}:buildcache',
+          inputs.registry,
+          steps.normalized-repository-name.outputs.string,
+          steps.normalized-upstream-stage-id.outputs.string,
+          steps.normalized-build-name.outputs.string
+        ) || '' }}" >> "$GITHUB_OUTPUT"
+
     - name: docker-metadata
       id: docker-metadata
       uses: docker/metadata-action@v5
       with:
-        images: ${{ inputs.registry }}/${{ steps.normalized-repository-name.outputs.string }}-${{ steps.normalized-target-stage-id.outputs.string }}-${{ steps.normalized-build-name.outputs.string }}
+        images: ${{ steps.image-cache-names.outputs.image_name }}
         tags: |
           type=raw,value=${{ github.sha }}
           type=raw,value=latest,enable=${{ github.ref_name == 'main' }}
@@ -113,9 +141,9 @@ runs:
         tags: ${{ steps.docker-metadata.outputs.tags }}
         labels: ${{ steps.docker-metadata.outputs.labels }}
         cache-from: |
-          ${{ inputs.upstream-stage-id != '' && format('type=registry,mode=max,ref={0}/{1}-{2}-{3}:buildcache', inputs.registry, steps.normalized-repository-name.outputs.string, steps.normalized-upstream-stage-id.outputs.string, steps.normalized-build-name.outputs.string) || '' }}
-          type=registry,mode=max,ref=${{ inputs.registry }}/${{ steps.normalized-repository-name.outputs.string }}-${{ steps.normalized-target-stage-id.outputs.string }}-${{ steps.normalized-build-name.outputs.string }}:buildcache
+          ${{ steps.image-cache-names.outputs.upstream_cache }}
+          ${{ steps.image-cache-names.outputs.target_cache }}
         cache-to: |
-          type=registry,mode=max,ref=${{ inputs.registry }}/${{ steps.normalized-repository-name.outputs.string }}-${{ steps.normalized-target-stage-id.outputs.string }}-${{ steps.normalized-build-name.outputs.string }}:buildcache
+          ${{ steps.image-cache-names.outputs.target_cache }}
         build-args: |
           ${{ inputs.build-args }}
