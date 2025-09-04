@@ -55,13 +55,12 @@ runs:
     - name: find-library
       id: find-library
       shell: bash
-      run: >
-        docker run --rm --volume ./importTester:/tmp/importTester-src
-        ${{ format('{0}/{1}', inputs.registry, steps.normalized-image-name.outputs.string) }} 
-        bash -c " 
-        cmake -E make_directory /tmp/importTester-build && 
-        cmake 
-          -S /tmp/importTester-src
-          -B /tmp/importTester-build
-          -DCMAKE_PREFIX_PATH=${{ inputs.prefix-path }}
+      run: |
+        docker run --rm --volume ./importTester:/tmp/importTester-src                                                   \
+        ${{ format('{0}/{1}', inputs.registry, steps.normalized-image-name.outputs.string) }}                           \
+        bash -c "                                                                                                       \
+        cmake                                                                                                           \
+          -S /tmp/importTester-src                                                                                      \
+          -B /tmp/importTester-build                                                                                    \
+          -DCMAKE_PREFIX_PATH=${{ inputs.prefix-path }}                                                                 \
           -DIMPORT_TESTER_PACKAGE_LIST=${{ inputs.library-name }}"
