@@ -1,0 +1,75 @@
+name: cmake-find-package
+description:  |
+  Validates presence and findability of a library in a docker image using ajakhotia/importTester
+  
+inputs:
+  os_base:
+    description: 'Base image, e.g. ubuntu:22.04'
+    required: true
+
+  toolchain:
+    description: 'Toolchain, e.g. linux-gnu-12'
+    required: true
+
+  library-name:
+    description: 'Library to test. This is forwarded as to find_package(... REQUIRED) call in cmake'
+    required: true
+
+  prefix-path:
+    description: 'A ; delimited string containing prefix paths of where the library might exist in the image.'
+    required: false
+
+  image-name:
+    description: 'Image (with tag) to pull'
+    required: true
+
+  username:
+    required: false
+    description: "Name of the user (defaults to github.actor)"
+    default: ""
+
+  password:
+    required: true
+    description: "Token to use to authenticate with the registry"
+
+  registry:
+    required: true
+    description: "Registry to use"
+    default: ghcr.io
+
+runs:
+  using: "composite"
+  steps:
+    - name: setup-login
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.username != '' && inputs.username || github.actor }}
+        password: ${{ inputs.password }}
+
+    - name: checkout-import-tester
+      uses: actions/checkout@v5
+      with:
+        repository: ajakhotia/importTester
+        path: importTester
+        ref: main
+
+    - name: normalized-image-name
+      id: normalized-image-name
+      uses: ajakhotia/infraCommons/.github/actions/normalize@main
+      with:
+        string: ${{ inputs.image-name }}
+
+    - name: find-library
+      id: find-library
+      shell: bash
+      run: >
+        docker run --rm --volume ./importTester:/tmp/importTester-src
+        ${{ format('{0}/{1}', inputs.registry, steps.normalized-image-name.outputs.string) }} 
+        bash -c " 
+        cmake -E make_directory /tmp/importTester-build && 
+        cmake 
+          -S /tmp/importTester-src
+          -B /tmp/importTester-build
+          -DCMAKE_PREFIX_PATH=${{ inputs.prefix-path }}
+          -DIMPORT_TESTER_PACKAGE_LIST=${{ inputs.library-name }}"
