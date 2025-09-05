@@ -1,6 +1,7 @@
 name: docker-typical-build-push
 description: |
-  Builds a stage out of a dockerfile while managing caches from upstream stages(via GHA cache)
+  Builds a stage out of a dockerfile while managing caches from upstream stages
+  (via GHA cache or registry cache)
 
 inputs:
   dockerfile:
@@ -44,6 +45,11 @@ inputs:
     required: true
     description: "Registry to use"
     default: ghcr.io
+
+  cache-type:
+    required: false
+    description: "Cache backend to use: 'gha' or 'registry'"
+    default: gha
 
 runs:
   using: "composite"
@@ -100,27 +106,44 @@ runs:
       id: image-cache-names
       shell: bash
       run: |
-        echo "image_name=${{ format(
-          '{0}/{1}/{2}/{3}',
+        set -euo pipefail
+
+        base="${{ format(
+          '{0}/{1}/{2}',
           inputs.registry,
           steps.normalized-repository-name.outputs.string,
-          steps.normalized-build-name.outputs.string,
-          steps.normalized-target-stage-id.outputs.string
-        ) }}" >> "$GITHUB_OUTPUT"
+          steps.normalized-build-name.outputs.string
+        ) }}"
 
-        echo "target_cache=${{ format(
-          'type=gha,mode=max,scope={0}-{1}-{2}',
-          steps.normalized-repository-name.outputs.string,
-          steps.normalized-build-name.outputs.string,
-          steps.normalized-target-stage-id.outputs.string
-        ) }}" >> "$GITHUB_OUTPUT"
+        target_id="${{ steps.normalized-target-stage-id.outputs.string }}"
+        upstream_id="${{ steps.normalized-upstream-stage-id.outputs.string }}"
+        cache_type="${{ inputs.cache-type }}"
 
-        echo "upstream_cache=${{ steps.normalized-upstream-stage-id.outputs.string != '' && format(
-          'type=gha,scope={0}-{1}-{2}',
-          steps.normalized-repository-name.outputs.string,
-          steps.normalized-build-name.outputs.string,
-          steps.normalized-upstream-stage-id.outputs.string
-        ) || '' }}" >> "$GITHUB_OUTPUT"
+        image_name="${base}/${target_id}"
+        echo "image_name=${image_name}" >> "$GITHUB_OUTPUT"
+
+        if [[ -n "${upstream_id}" ]]; then
+          upstream_image="${base}/${upstream_id}"
+        else
+          upstream_image=""
+        fi
+
+        if [[ "${cache_type}" == "registry" ]]; then
+          echo "target_cache=type=registry,ref=${image_name}:cache,mode=max" >> "$GITHUB_OUTPUT"
+          if [[ -n "${upstream_image}" ]]; then
+            echo "upstream_cache=type=registry,ref=${upstream_image}:cache" >> "$GITHUB_OUTPUT"
+          else
+            echo "upstream_cache=" >> "$GITHUB_OUTPUT"
+          fi
+        else
+          scope_base="${{ steps.normalized-repository-name.outputs.string }}-${{ steps.normalized-build-name.outputs.string }}"
+          echo "target_cache=type=gha,mode=max,scope=${scope_base}-${target_id}" >> "$GITHUB_OUTPUT"
+          if [[ -n "${upstream_id}" ]]; then
+            echo "upstream_cache=type=gha,scope=${scope_base}-${upstream_id}" >> "$GITHUB_OUTPUT"
+          else
+            echo "upstream_cache=" >> "$GITHUB_OUTPUT"
+          fi
+        fi
 
     - name: docker-metadata
       id: docker-metadata

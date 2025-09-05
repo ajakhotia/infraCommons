@@ -1,5 +1,11 @@
 name: normalize
-description: "Normalize a string for use with docker related operations"
+description: |
+  Normalize a string for use with Docker-related operations.
+  - Converts to lowercase
+  - Replaces non [a-z0-9/] characters with '-'
+  - Collapses consecutive '-' and '/'
+  - Strips leading/trailing dashes and slashes
+  - Warns (does not fail) if the result exceeds 200 characters
 
 inputs:
   string:
@@ -18,4 +24,16 @@ runs:
       id: normalize
       shell: bash
       run: |
-        echo "string=$(echo '${{ inputs.string }}' | sed -E 's/([a-z0-9])([A-Z])/\1-\L\2/g' | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9/]+/-/g')" >> $GITHUB_OUTPUT
+        string=$(echo '${{ inputs.string }}' \
+          | tr '[:upper:]' '[:lower:]' \
+          | sed -E 's/[^a-z0-9/]+/-/g' \
+          | sed -E 's/-+/-/g' \
+          | sed -E 's:/+:/:g' \
+          | sed -E 's/^-+|-+$//g' \
+          | sed -E 's:^/+|/+$::g')
+
+        if [ ${#string} -gt 200 ]; then
+          echo "::warning::Normalized string exceeds 200 characters (length=${#string})"
+        fi
+
+        echo "string=$string" >> "$GITHUB_OUTPUT"
