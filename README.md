@@ -55,10 +55,13 @@ Reusable CMake modules to standardize builds.
     - Extracts system package dependencies from a JSON descriptor and prints a normalized list.
     - Useful for generating install step inputs (e.g., apt install) or auditing transitive requirements.
 
-- APT sources installer
-    - Scripts to add common upstream APT sources (e.g., GNU, LLVM, vendor).
-    - Ensures reproducible toolchain provisioning across CI and local environments.
+- APT repositories for GNU/Clang/NVIDIA toolchains
+    - Scripts to add common upstream APT sources for toolchains:
+        - GNU (GCC) toolchain repositories — [tools/apt/addGNUSources.sh](tools/apt/addGNUSources.sh)
+        - LLVM/Clang repositories — [tools/apt/addLLVMSources.sh](tools/apt/addLLVMSources.sh)
+        - NVIDIA CUDA/NVML toolchain repositories — [tools/apt/addNvidiaSources.sh](tools/apt/addNvidiaSources.sh)
+    - Ensures reproducible compiler/toolchain provisioning across CI and local environments.
 
-- CMake installer
+- CMake installer — [tools/installCMake.sh](tools/installCMake.sh)
     - Script to install a specific CMake version in CI or developer machines.
     - Reduces environment drift; useful when system package managers lag behind required versions.
