@@ -51,9 +51,40 @@ Reusable CMake modules to standardize builds.
 
 ## Tools
 
-- extractDependencies.sh
+- extractDependencies.sh — [tools/extractDependencies.sh](tools/extractDependencies.sh)
     - Extracts system package dependencies from a JSON descriptor and prints a normalized list.
     - Useful for generating install step inputs (e.g., apt install) or auditing transitive requirements.
+    - Example `systemDependencies.json`:
+      ```json
+      {
+        "supportedOS": [
+          "ubuntu:22.04",
+          "ubuntu:24.04"
+        ],
+        "groupTags": [
+          "all",
+          "skip"
+        ],
+        "groups": [
+          {
+            "group": "Basics",
+            "ubuntu:22.04": "ca-certificates curl wget",
+            "ubuntu:24.04": "ca-certificates curl wget",
+            "tag": "all"
+          },
+          {
+            "group": "Compilers",
+            "ubuntu:22.04": "clang-19 gcc-13 g++-13 gfortran-13 libomp-19-dev",
+            "ubuntu:24.04": "clang-19 gcc-14 g++-14 gfortran-14 libomp-19-dev",
+            "tag": "all"
+          }
+        ]
+      }
+      ```
+      - Usage:
+        ```shell
+        sh tools/extractDependencies.sh Compilers systemDependencies.json 
+        ```
 
 - APT repositories for GNU/Clang/NVIDIA toolchains
     - Scripts to add common upstream APT sources for toolchains:
