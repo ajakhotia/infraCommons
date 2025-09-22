@@ -68,6 +68,7 @@ Reusable CMake modules to standardize builds.
               ""
       )
       ```
+    - See it used in another project: [nioc/modules/messages/CMakeLists.txt](https://github.com/ajakhotia/nioc/blob/main/modules/messages/CMakeLists.txt)
 
 - capnprotoGenerate.cmake — [cmake/utilities/capnprotoGenerate.cmake](cmake/utilities/capnprotoGenerate.cmake)
     - Thin helper around Cap’n Proto code generation.
@@ -97,6 +98,7 @@ Reusable CMake modules to standardize builds.
               ""
       )
       ```
+    - See it used in another project: [nioc/modules/messages/CMakeLists.txt](https://github.com/ajakhotia/nioc/blob/main/modules/messages/CMakeLists.txt)
 
 - clangFormat.cmake — [cmake/utilities/clangFormat.cmake](cmake/utilities/clangFormat.cmake)
     - Adds a formatting targets to your CMake project. Building the target runs clang-format on all source files.
