@@ -14,7 +14,7 @@ truth for CI workflows, code quality tooling, and build utilities that teams can
 ## CI: infra-congruency-check
 
 Keeps common files in downstream projects in lockstep with infraCommons as development progresses. The workflow compares
-shared files and, when updates are needed, automatically opens a low-friction merge request/PR to sync changes.
+shared files and, when updates are needed, automatically opens a low-friction pull request (PR) to sync changes.
 
 Highlights:
 
@@ -32,22 +32,94 @@ See it in action:
 
 Reusable CMake modules to standardize builds.
 
-- exportedTargets.cmake
+- exportedTargets.cmake — [cmake/utilities/exportedTargets.cmake](cmake/utilities/exportedTargets.cmake)
     - Helpers for exporting and installing CMake targets in a consistent way.
     - Encourages predictable namespace usage and proper install/export rules for libraries and headers.
+    - Example:
+      ```cmake
+      include(cmake/utilities/exportedTargets.cmake)
+      
+      find_package(Boost CONFIG REQUIRED COMPONENTS headers)
 
-- capnprotoGenerate.cmake
+      add_exported_library(
+          TARGET
+              exampleLibrary
+          TYPE
+              INTERFACE
+          NAMESPACE
+              ExampleNamespace::
+          EXPORT
+              ExampleTargetSet
+          SOURCES
+              ""
+          HEADERS
+              INTERFACE include/example/core/foo.hpp
+              INTERFACE include/example/core/bar.hpp
+              INTERFACE include/example/core/baz.hpp
+          INCLUDE_DIRECTORIES
+              ${CMAKE_CURRENT_SOURCE_DIR}/include
+          LINK_LIBRARIES
+              INTERFACE Boost::headers
+          COMPILE_FEATURES
+              INTERFACE cxx_std_20
+          COMPILE_OPTIONS
+              ""
+          COMPILE_DEFINITIONS
+              ""
+      )
+      ```
+
+- capnprotoGenerate.cmake — [cmake/utilities/capnprotoGenerate.cmake](cmake/utilities/capnprotoGenerate.cmake)
     - Thin helper around Cap’n Proto code generation.
     - Provides targets/macros to generate sources and integrate them into standard CMake build graphs with correct
       dependencies.
+    - Example:
+      ```cmake
+      include(cmake/utilities/capnprotoGenerate.cmake)
+      
+      capnproto_generate_library(
+          TARGET
+              exampleMessagesIdl
+          NAMESPACE
+              ExampleNamespace::
+          EXPORT
+              ExampleTargetSet
+          SCHEMA_FILES
+              include/example/messages/idl/message_a.capnp
+              include/example/messages/idl/message_b.capnp
+          COMPILE_FEATURES
+              PUBLIC cxx_std_20
+          COMPILE_OPTIONS
+              PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -pedantic -Werror -Wno-unknown-pragmas>
+              PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -pedantic -Werror -Wno-unknown-pragmas>
+              PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+          COMPILE_DEFINITIONS
+              ""
+      )
+      ```
 
-- clangFormat.cmake
-    - Adds formatting targets (e.g., format, format-check).
-    - Integrates clang-format with include/exclude globs for consistent code style in CI and locally.
+- clangFormat.cmake — [cmake/utilities/clangFormat.cmake](cmake/utilities/clangFormat.cmake)
+    - Adds a formatting targets to your CMake project. Building the target runs clang-format on all source files.
+    - Include the following in your root CMakeLists.txt:
+      ```cmake
+      include(cmake/utilities/clangFormat.cmake)
+      add_clang_format(TARGET exampleClangFormat VERSION 19)
+      ```
 
-- clangTidy.cmake
-    - Adds linting targets (e.g., tidy, tidy-all).
-    - Integrates clang-tidy with project targets and sensible defaults suitable for CI enforcement.
+- clangTidy.cmake — [cmake/utilities/clangTidy.cmake](cmake/utilities/clangTidy.cmake)
+    - Sets up the project to use clang-tidy for static analysis.
+    - Example:
+        - Root CMakeLists.txt:
+          ```cmake
+          include(cmake/utilities/clangTidy.cmake)
+          add_clang_tidy(VERSION 19)
+          ```
+        - Enable clang-tidy check for a specific target using:
+          ```cmake
+          if(CLANG_TIDY)
+              set_target_properties(exampleLibrary PROPERTIES CXX_CLANG_TIDY ${CLANG_TIDY})
+          endif() 
+          ```
 
 ## Tools
 
@@ -81,10 +153,10 @@ Reusable CMake modules to standardize builds.
         ]
       }
       ```
-      - Usage:
-        ```shell
-        sh tools/extractDependencies.sh Compilers systemDependencies.json 
-        ```
+        - Usage:
+          ```shell
+          sh tools/extractDependencies.sh Compilers systemDependencies.json 
+          ```
 
 - APT repositories for GNU/Clang/NVIDIA toolchains
     - Scripts to add common upstream APT sources for toolchains:
