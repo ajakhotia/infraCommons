@@ -3,13 +3,13 @@
 # infraCommons
 
 A centralized repository of infrastructure assets shared across multiple projects. It serves as the single source of
-truth for CI workflows, code quality tooling, and build utilities that teams can consistently reuse.
+truth for CI workflows, code-quality tooling, and build utilities that teams can consistently reuse.
 
 ## Usage
 
-- Copy required files/directories (preserve relative paths).
+- Copy the required files/directories (preserve relative paths).
 - Add a CI congruency check to ensure your copies remain identical to infraCommons.
-- Propose improvements here so all clients benefit.
+- Propose improvements here so all consumers benefit.
 
 ## CI: infra-congruency-check
 
@@ -30,60 +30,65 @@ See it in action:
 
 ## Reusable GitHub Actions
 
-This repository exposes composite actions for reuse across projects. Reference them as:
+This repository exposes composite actions for reuse across projects. Reference them in your workflows using:
+
+```yaml
 - uses: ajakhotia/infraCommons/.github/actions/<action-name>@main
+```
 
 Actions:
 
 - cmake-find-package
-  - Purpose: Run standardized CMake package discovery in CI to fail fast on missing/misconfigured dependencies.
-  - Example:
-    ```yaml
-    - name: find-library
-      uses: ajakhotia/infraCommons/.github/actions/cmake-find-package@main
-      with:
-        library-name: <library-name>
-        prefix-path: <cmake-prefix-path>
-        image-name: <image-url>
-        password: ${{ secrets.GITHUB_TOKEN }}
-    ```
+    - Purpose: Run standardized CMake package discovery in CI to fail fast on missing/misconfigured dependencies.
+    - Example:
+      ```yaml
+      - name: find-library
+        uses: ajakhotia/infraCommons/.github/actions/cmake-find-package@main
+        with:
+          library-name: <library-name>
+          prefix-path: <cmake-prefix-path>
+          image-name: <image-url>
+          password: ${{ secrets.GITHUB_TOKEN }}
+      ```
 
 - docker-typical-build-push
-  - Purpose: Build and push Docker images with common ergonomics (tagging, multi-arch, caching).
-- Example:
-  ```yaml
-    - name: docker-build-and-push-stage
-      uses: ajakhotia/infraCommons/.github/actions/docker-typical-build-push@main
-      with:
-        dockerfile: <path-to-dockerfile>
-        password: ${{ secrets.GITHUB_TOKEN }}
-        target-stage: <target-docker-stage>
-        target-stage-id: <id-of-target-stage>
-        upstream-stage-id: <id-of-upstream-stage-that-is-build-before-this> # can be empty.
-        cache-type: registry # can be gha.
-        build-name: <build-name>
-        build-args: |
-          FOO1=BAR1
-          FOO2=BAR2
-  ```
+    - Purpose: Build and push Docker images with common ergonomics (tagging, multi-arch, caching).
+    - Example:
+      ```yaml
+      - name: docker-build-and-push-stage
+        uses: ajakhotia/infraCommons/.github/actions/docker-typical-build-push@main
+        with:
+          dockerfile: <path-to-dockerfile>
+          password: ${{ secrets.GITHUB_TOKEN }}
+          target-stage: <target-docker-stage>
+          target-stage-id: <id-of-target-stage>
+          upstream-stage-id: <id-of-upstream-stage-built-before-this> # can be omitted if no upstream stage
+          cache-type: registry # or gha
+          build-name: <build-name>
+          build-args: |
+            FOO1=BAR1
+            FOO2=BAR2
+      ```
 
 - normalize
-  - Purpose: Normalize repository content (e.g., line endings/permissions) to keep diffs clean.
-  - Example:
-    ```yaml
+    - Purpose: Normalize repository content (e.g., line endings/permissions) to keep diffs clean.
+    - Example:
+      ```yaml
       - name: normalizer-name
         id: normalized-name-id
         uses: ajakhotia/infraCommons/.github/actions/normalize@main
         with:
           string: ${{ inputs.target-stage-id }}
-    ```
+      ```
 
 Notes:
-- Pin to a version tag (e.g., @v1) for stability in consumers.
+
+- Pin to a version tag (e.g., @v1) for stability.
 - Check each action’s action.yaml for supported inputs/outputs.
-- See a real-world usage `docker-typical-build-push` and `cmake-find-package` in `robotFarm`:
-  - https://github.com/ajakhotia/robotFarm/blob/main/.github/workflows/docker-image.yaml
-- See a real-world usage `normalize` in .github/actions/docker-typical-build-push/action.yaml
+- See real-world usage of `docker-typical-build-push` and `cmake-find-package`
+  in [robotFarm](https://github.com/ajakhotia/robotFarm/blob/main/.github/workflows/docker-image.yaml).
+- See real-world usage of `normalize`
+  in [docker-typical-build-push/action.yaml](.github/actions/docker-typical-build-push/action.yaml).
 
 ## CMake helpers
 
@@ -125,7 +130,8 @@ Reusable CMake modules to standardize builds.
               ""
       )
       ```
-    - See it used in another project: [nioc/modules/messages/CMakeLists.txt](https://github.com/ajakhotia/nioc/blob/main/modules/messages/CMakeLists.txt)
+    - See it used in another
+      project: [nioc/modules/messages/CMakeLists.txt](https://github.com/ajakhotia/nioc/blob/main/modules/messages/CMakeLists.txt)
 
 - capnprotoGenerate.cmake — [cmake/utilities/capnprotoGenerate.cmake](cmake/utilities/capnprotoGenerate.cmake)
     - Thin helper around Cap’n Proto code generation.
@@ -155,7 +161,8 @@ Reusable CMake modules to standardize builds.
               ""
       )
       ```
-    - See it used in another project: [nioc/modules/messages/CMakeLists.txt](https://github.com/ajakhotia/nioc/blob/main/modules/messages/CMakeLists.txt)
+    - See it used in another
+      project: [nioc/modules/messages/CMakeLists.txt](https://github.com/ajakhotia/nioc/blob/main/modules/messages/CMakeLists.txt)
 
 - clangFormat.cmake — [cmake/utilities/clangFormat.cmake](cmake/utilities/clangFormat.cmake)
     - Adds a formatting targets to your CMake project. Building the target runs clang-format on all source files.
@@ -177,15 +184,15 @@ Reusable CMake modules to standardize builds.
           ```cmake
           if(CLANG_TIDY)
               set_target_properties(exampleLibrary PROPERTIES CXX_CLANG_TIDY ${CLANG_TIDY})
-          endif() 
+          endif()
           ```
 
 ## Tools
 
 - extractDependencies.sh — [tools/extractDependencies.sh](tools/extractDependencies.sh)
     - Extracts system package dependencies from a JSON descriptor and prints a normalized list.
-    - Useful for generating install step inputs (e.g., apt install) or auditing transitive requirements.
-    - Example `systemDependencies.json`:
+    - Useful for generating install-step inputs (e.g., apt install) or auditing transitive requirements.
+    - Example systemDependencies.json:
       ```json
       {
         "supportedOS": [
@@ -213,8 +220,8 @@ Reusable CMake modules to standardize builds.
       }
       ```
         - Usage:
-          ```shell
-          sh tools/extractDependencies.sh Compilers systemDependencies.json 
+          ```bash
+          sh tools/extractDependencies.sh Compilers systemDependencies.json
           ```
 
 - APT repositories for GNU/Clang/NVIDIA toolchains
@@ -225,5 +232,5 @@ Reusable CMake modules to standardize builds.
     - Ensures reproducible compiler/toolchain provisioning across CI and local environments.
 
 - CMake installer — [tools/installCMake.sh](tools/installCMake.sh)
-    - Script to install a specific CMake version in CI or developer machines.
+    - Installs a specific CMake version in CI or on developer machines.
     - Reduces environment drift; useful when system package managers lag behind required versions.
