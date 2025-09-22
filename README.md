@@ -1,11 +1,11 @@
 [![infra-congruency-check](https://github.com/ajakhotia/infraCommons/actions/workflows/infra-congruency-check.yaml/badge.svg)](https://github.com/ajakhotia/infraCommons/actions/workflows/infra-congruency-check.yaml)
 
-# infraCommons
+# 🧰 infraCommons
 
 A centralized repository of infrastructure assets shared across multiple projects. It serves as the single source of
 truth for CI workflows, code-quality tooling, and build utilities that teams can consistently reuse.
 
-## Usage
+## ⚙️ Usage
 
 - Copy the required files/directories to your project.
     - Always preserve the relative paths of the copied files.
@@ -14,7 +14,7 @@ truth for CI workflows, code-quality tooling, and build utilities that teams can
 - Propose improvements here so all consumers benefit.
 - See [robotFarm](https://github.com/ajakhotia/robotFarm) for a real-world example.
 
-## infra-congruency-check
+## 🔄 infra-congruency-check
 
 Keeps common files in downstream projects in lockstep with infraCommons as development progresses. The workflow compares
 shared files and, when updates are needed, automatically opens a low-friction pull request (PR) to sync changes.
@@ -31,7 +31,7 @@ See it in action:
 - [robotFarm](https://github.com/ajakhotia/robotFarm)
 - [nioc](https://github.com/ajakhotia/nioc)
 
-## Reusable GitHub Actions
+## 🧩 Reusable GitHub Actions
 
 This repository exposes composite GitHub actions for reuse across projects. Reference them in your workflows using:
 
@@ -39,7 +39,7 @@ This repository exposes composite GitHub actions for reuse across projects. Refe
 - uses: ajakhotia/infraCommons/.github/actions/<action-name>@main
 ```
 
-### Action: cmake-find-package
+### 🧭 Action: cmake-find-package
 
 Run standardized CMake package discovery in CI to fail fast on missing/misconfigured dependencies.
 
@@ -56,7 +56,7 @@ Run standardized CMake package discovery in CI to fail fast on missing/misconfig
 See real-world usage of `cmake-find-package`
 in [robotFarm](https://github.com/ajakhotia/robotFarm/blob/main/.github/workflows/docker-image.yaml).
 
-### Action: docker-typical-build-push
+### 🐳 Action: docker-typical-build-push
 
 Build and push Docker images with common ergonomics (tagging, multi-arch, caching).
 
@@ -79,7 +79,7 @@ Build and push Docker images with common ergonomics (tagging, multi-arch, cachin
 See real-world usage of `docker-typical-build-push`
 in [robotFarm](https://github.com/ajakhotia/robotFarm/blob/main/.github/workflows/docker-image.yaml).
 
-### Action: normalize
+### ✨ Action: normalize
 
 Normalize a string so that it is usable in building a Docker image tag.
 
@@ -94,11 +94,11 @@ Normalize a string so that it is usable in building a Docker image tag.
 See real-world usage of `normalize`
 in [docker-typical-build-push/action.yaml](.github/actions/docker-typical-build-push/action.yaml).
 
-## CMake helpers
+## 🧱 CMake helpers
 
 Reusable CMake modules to standardize builds.
 
-### exportedTargets.cmake — [cmake/utilities/exportedTargets.cmake](cmake/utilities/exportedTargets.cmake)
+### 📦 exportedTargets.cmake — [cmake/utilities/exportedTargets.cmake](cmake/utilities/exportedTargets.cmake)
 
 - Helpers for exporting and installing CMake targets in a consistent way.
 - Encourages predictable namespace usage and proper install/export rules for libraries and headers.
@@ -138,7 +138,7 @@ Reusable CMake modules to standardize builds.
 - See it used in another
   project: [nioc/modules/messages/CMakeLists.txt](https://github.com/ajakhotia/nioc/blob/main/modules/messages/CMakeLists.txt)
 
-### capnprotoGenerate.cmake — [cmake/utilities/capnprotoGenerate.cmake](cmake/utilities/capnprotoGenerate.cmake)
+### 📡 capnprotoGenerate.cmake — [cmake/utilities/capnprotoGenerate.cmake](cmake/utilities/capnprotoGenerate.cmake)
 
 - Thin helper around Cap’n Proto code generation.
 - Provides targets/macros to generate sources and integrate them into standard CMake build graphs with correct
@@ -170,7 +170,7 @@ Reusable CMake modules to standardize builds.
 - See it used in another
   project: [nioc/modules/messages/CMakeLists.txt](https://github.com/ajakhotia/nioc/blob/main/modules/messages/CMakeLists.txt)
 
-### clangFormat.cmake — [cmake/utilities/clangFormat.cmake](cmake/utilities/clangFormat.cmake)
+### 🎨 clangFormat.cmake — [cmake/utilities/clangFormat.cmake](cmake/utilities/clangFormat.cmake)
 
 - Adds a target to your CMake project. Building the target runs clang-format on all source files.
 - Include the following in your root CMakeLists.txt:
@@ -179,7 +179,7 @@ Reusable CMake modules to standardize builds.
   add_clang_format(TARGET exampleClangFormat VERSION 19)
   ```
 
-### clangTidy.cmake — [cmake/utilities/clangTidy.cmake](cmake/utilities/clangTidy.cmake)
+### 🧹 clangTidy.cmake — [cmake/utilities/clangTidy.cmake](cmake/utilities/clangTidy.cmake)
 
 - Sets up the project to use clang-tidy for static analysis.
 - Usage:
@@ -195,9 +195,9 @@ Reusable CMake modules to standardize builds.
       endif()
       ```
 
-## Tools
+## 🛠️ Tools
 
-### extractDependencies.sh — [tools/extractDependencies.sh](tools/extractDependencies.sh)
+### 📃 extractDependencies.sh — [tools/extractDependencies.sh](tools/extractDependencies.sh)
 
 - Extracts system package dependencies from a JSON descriptor and prints a normalized list.
 - Useful for generating install-step inputs (e.g., apt-get) or auditing transitive requirements.
@@ -233,7 +233,7 @@ Reusable CMake modules to standardize builds.
       sh tools/extractDependencies.sh Compilers systemDependencies.json
       ```
 
-### APT repositories for GNU/Clang/NVIDIA toolchains
+### 📦➡️ APT repositories for GNU/Clang/NVIDIA toolchains
 
 - Scripts to add common upstream APT sources for toolchains:
     - GNU (GCC) toolchain repositories — [tools/apt/addGNUSources.sh](tools/apt/addGNUSources.sh)
@@ -241,7 +241,7 @@ Reusable CMake modules to standardize builds.
     - NVIDIA CUDA/NVML toolchain repositories — [tools/apt/addNvidiaSources.sh](tools/apt/addNvidiaSources.sh)
 - Ensures reproducible compiler/toolchain provisioning across CI and local environments.
 
-### CMake installer — [tools/installCMake.sh](tools/installCMake.sh)
+### ⬇️🧱 CMake installer — [tools/installCMake.sh](tools/installCMake.sh)
 
 - Installs a specific CMake version in CI or on developer machines.
 - Reduces environment drift; useful when system package managers lag behind required versions.
