@@ -108,7 +108,7 @@ Reusable CMake modules to standardize builds.
 
 - clangTidy.cmake — [cmake/utilities/clangTidy.cmake](cmake/utilities/clangTidy.cmake)
     - Sets up the project to use clang-tidy for static analysis.
-    - Example:
+    - Usage:
         - Root CMakeLists.txt:
           ```cmake
           include(cmake/utilities/clangTidy.cmake)
