@@ -28,7 +28,7 @@ See it in action:
 - [robotFarm](https://github.com/ajakhotia/robotFarm)
 - [nioc](https://github.com/ajakhotia/nioc)
 
-## CMake: utilities
+## CMake helpers
 
 Reusable CMake modules to standardize builds.
 
