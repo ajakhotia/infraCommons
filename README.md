@@ -2,51 +2,63 @@
 
 # infraCommons
 
-A centralized repository of common files shared across multiple projects. This repository serves as the single 
-source of truth for shared infrastructure components.
-
-## Overview
-
-infraCommons contains essential configuration and utility files that are used by various client projects.
-This repository is expected to be language agnostic
+A centralized repository of infrastructure assets shared across multiple projects. It serves as the single source of
+truth for CI workflows, code quality tooling, and build utilities that teams can consistently reuse.
 
 ## Usage
 
-Client projects can copy required files from this repository for their specific needs. To maintain consistency,
-each client project should:
+- Copy required files/directories (preserve relative paths).
+- Add a CI congruency check to ensure your copies remain identical to infraCommons.
+- Propose improvements here so all clients benefit.
 
-1. Copy only the necessary files they need
-2. Keep the relative path structure intact
-3. Implement required CI tests to ensure consistency
+## CI: infra-congruency-check
 
-## Consistency Validation
+Keeps common files in downstream projects in lockstep with infraCommons as development progresses. The workflow compares
+shared files and, when updates are needed, automatically opens a low-friction merge request/PR to sync changes.
 
-Each client project must implement continuous integration tests that:
-- Compare their copy of shared files against this repository's main branch
-- Verify that any files present in both locations are exactly identical
-- Use paths relative to the root for comparison
+Highlights:
 
-The congruency test implementation is provided in `ci/congruency_test.py`. This script can be used to:
-- Compare files between template and client directories
-- Ignore specified files during comparison
-- Show detailed diffs for any inconsistencies found
+- Continuous alignment via scheduled and event-driven runs.
+- Low-friction updates through auto-created PRs.
+- Supports intentional divergence with ignore lists.
+- Clear, early feedback on drift.
+
+See it in action:
+
+- [robotFarm](https://github.com/ajakhotia/robotFarm)
+- [nioc](https://github.com/ajakhotia/nioc)
+
+## CMake: utilities
+
+Reusable CMake modules to standardize builds.
+
+- exportedTargets.cmake
+    - Helpers for exporting and installing CMake targets in a consistent way.
+    - Encourages predictable namespace usage and proper install/export rules for libraries and headers.
+
+- capnprotoGenerate.cmake
+    - Thin helper around Cap’n Proto code generation.
+    - Provides targets/macros to generate sources and integrate them into standard CMake build graphs with correct
+      dependencies.
+
+- clangFormat.cmake
+    - Adds formatting targets (e.g., format, format-check).
+    - Integrates clang-format with include/exclude globs for consistent code style in CI and locally.
+
+- clangTidy.cmake
+    - Adds linting targets (e.g., tidy, tidy-all).
+    - Integrates clang-tidy with project targets and sensible defaults suitable for CI enforcement.
 
 ## Tools
-### Clang Tidy
-Clang Tidy configs are generated using the following command:
-```shell
-clang-tidy-19 \
-   -checks='*,-clang-analyzer-alpha.*,-google-*,-llvm-*,-llvmlibc-*,-abseil-*,-fuchsia-*,-zircon-*,-objc-*,-android-*,-modernize-use-trailing-return-type,-misc-include-cleaner,-boost-use-ranges'   \
-   -warnings-as-errors='bugprone-*,cert-*,clang-analyzer-*,cppcoreguidelines-*,modernize-*,performance-*,portability-*,readability-*,security-*'   \
-   --dump-config > tools/clang-tidy-19
-```
 
-### Clang Format
-Clang Format configs are generated using the following command:
-```shell
-clang-format-19 -style=GNU -dump-config > tools/clang-format-19
-```
+- extractDependencies.sh
+    - Extracts system package dependencies from a JSON descriptor and prints a normalized list.
+    - Useful for generating install step inputs (e.g., apt install) or auditing transitive requirements.
 
-## License
+- APT sources installer
+    - Scripts to add common upstream APT sources (e.g., GNU, LLVM, vendor).
+    - Ensures reproducible toolchain provisioning across CI and local environments.
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+- CMake installer
+    - Script to install a specific CMake version in CI or developer machines.
+    - Reduces environment drift; useful when system package managers lag behind required versions.
