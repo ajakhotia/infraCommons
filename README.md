@@ -28,6 +28,63 @@ See it in action:
 - [robotFarm](https://github.com/ajakhotia/robotFarm)
 - [nioc](https://github.com/ajakhotia/nioc)
 
+## Reusable GitHub Actions
+
+This repository exposes composite actions for reuse across projects. Reference them as:
+- uses: ajakhotia/infraCommons/.github/actions/<action-name>@main
+
+Actions:
+
+- cmake-find-package
+  - Purpose: Run standardized CMake package discovery in CI to fail fast on missing/misconfigured dependencies.
+  - Example:
+    ```yaml
+    - name: find-library
+      uses: ajakhotia/infraCommons/.github/actions/cmake-find-package@main
+      with:
+        library-name: <library-name>
+        prefix-path: <cmake-prefix-path>
+        image-name: <image-url>
+        password: ${{ secrets.GITHUB_TOKEN }}
+    ```
+
+- docker-typical-build-push
+  - Purpose: Build and push Docker images with common ergonomics (tagging, multi-arch, caching).
+- Example:
+  ```yaml
+    - name: docker-build-and-push-stage
+      uses: ajakhotia/infraCommons/.github/actions/docker-typical-build-push@main
+      with:
+        dockerfile: <path-to-dockerfile>
+        password: ${{ secrets.GITHUB_TOKEN }}
+        target-stage: <target-docker-stage>
+        target-stage-id: <id-of-target-stage>
+        upstream-stage-id: <id-of-upstream-stage-that-is-build-before-this> # can be empty.
+        cache-type: registry # can be gha.
+        build-name: <build-name>
+        build-args: |
+          FOO1=BAR1
+          FOO2=BAR2
+  ```
+
+- normalize
+  - Purpose: Normalize repository content (e.g., line endings/permissions) to keep diffs clean.
+  - Example:
+    ```yaml
+      - name: normalizer-name
+        id: normalized-name-id
+        uses: ajakhotia/infraCommons/.github/actions/normalize@main
+        with:
+          string: ${{ inputs.target-stage-id }}
+    ```
+
+Notes:
+- Pin to a version tag (e.g., @v1) for stability in consumers.
+- Check each action’s action.yaml for supported inputs/outputs.
+- See a real-world usage `docker-typical-build-push` and `cmake-find-package` in `robotFarm`:
+  - https://github.com/ajakhotia/robotFarm/blob/main/.github/workflows/docker-image.yaml
+- See a real-world usage `normalize` in .github/actions/docker-typical-build-push/action.yaml
+
 ## CMake helpers
 
 Reusable CMake modules to standardize builds.
