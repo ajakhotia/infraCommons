@@ -31,7 +31,7 @@ See it in action:
 - [robotFarm](https://github.com/ajakhotia/robotFarm)
 - [nioc](https://github.com/ajakhotia/nioc)
 
-## 🧩 Reusable GitHub Actions
+## ♻️ Reusable GitHub Actions
 
 This repository exposes composite GitHub actions for reuse across projects. Reference them in your workflows using:
 
@@ -39,7 +39,7 @@ This repository exposes composite GitHub actions for reuse across projects. Refe
 - uses: ajakhotia/infraCommons/.github/actions/<action-name>@main
 ```
 
-### 🧭 Action: cmake-find-package
+### 🧐 Action: cmake-find-package
 
 Run standardized CMake package discovery in CI to fail fast on missing/misconfigured dependencies.
 
@@ -94,7 +94,7 @@ Normalize a string so that it is usable in building a Docker image tag.
 See real-world usage of `normalize`
 in [docker-typical-build-push/action.yaml](.github/actions/docker-typical-build-push/action.yaml).
 
-## 🧱 CMake helpers
+## 🏗️ CMake helpers
 
 Reusable CMake modules to standardize builds.
 
@@ -138,7 +138,7 @@ Reusable CMake modules to standardize builds.
 - See it used in another
   project: [nioc/modules/messages/CMakeLists.txt](https://github.com/ajakhotia/nioc/blob/main/modules/messages/CMakeLists.txt)
 
-### 📡 capnprotoGenerate.cmake — [cmake/utilities/capnprotoGenerate.cmake](cmake/utilities/capnprotoGenerate.cmake)
+### 🧬 capnprotoGenerate.cmake — [cmake/utilities/capnprotoGenerate.cmake](cmake/utilities/capnprotoGenerate.cmake)
 
 - Thin helper around Cap’n Proto code generation.
 - Provides targets/macros to generate sources and integrate them into standard CMake build graphs with correct
@@ -233,7 +233,7 @@ Reusable CMake modules to standardize builds.
       sh tools/extractDependencies.sh Compilers systemDependencies.json
       ```
 
-### 📦➡️ APT repositories for GNU/Clang/NVIDIA toolchains
+### 📦 APT repositories for GNU/Clang/NVIDIA toolchains
 
 - Scripts to add common upstream APT sources for toolchains:
     - GNU (GCC) toolchain repositories — [tools/apt/addGNUSources.sh](tools/apt/addGNUSources.sh)
@@ -241,7 +241,7 @@ Reusable CMake modules to standardize builds.
     - NVIDIA CUDA/NVML toolchain repositories — [tools/apt/addNvidiaSources.sh](tools/apt/addNvidiaSources.sh)
 - Ensures reproducible compiler/toolchain provisioning across CI and local environments.
 
-### ⬇️🧱 CMake installer — [tools/installCMake.sh](tools/installCMake.sh)
+### 🏗️ CMake installer — [tools/installCMake.sh](tools/installCMake.sh)
 
 - Installs a specific CMake version in CI or on developer machines.
 - Reduces environment drift; useful when system package managers lag behind required versions.
