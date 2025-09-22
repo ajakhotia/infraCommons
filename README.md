@@ -102,7 +102,6 @@ Reusable CMake modules to standardize builds.
 
 - Helpers for exporting and installing CMake targets in a consistent way.
 - Encourages predictable namespace usage and proper install/export rules for libraries and headers.
-- Example:
   ```cmake
   include(cmake/utilities/exportedTargets.cmake)
   
@@ -143,7 +142,6 @@ Reusable CMake modules to standardize builds.
 - Thin helper around Cap’n Proto code generation.
 - Provides targets/macros to generate sources and integrate them into standard CMake build graphs with correct
   dependencies.
-- Example:
   ```cmake
   include(cmake/utilities/capnprotoGenerate.cmake)
   
@@ -172,28 +170,30 @@ Reusable CMake modules to standardize builds.
 
 ### 🎨 clangFormat.cmake — [cmake/utilities/clangFormat.cmake](cmake/utilities/clangFormat.cmake)
 
-- Adds a target to your CMake project. Building the target runs clang-format on all source files.
-- Include the following in your root CMakeLists.txt:
-  ```cmake
-  include(cmake/utilities/clangFormat.cmake)
-  add_clang_format(TARGET exampleClangFormat VERSION 19)
-  ```
+Adds a target to your CMake project. Building the target runs clang-format on all source files. In root CMakeLists.txt
+use the following:
+
+```cmake
+include(cmake/utilities/clangFormat.cmake)
+add_clang_format(TARGET exampleClangFormat VERSION 19)
+```
 
 ### 🧹 clangTidy.cmake — [cmake/utilities/clangTidy.cmake](cmake/utilities/clangTidy.cmake)
 
-- Sets up the project to use clang-tidy for static analysis.
-- Usage:
-    - In root CMakeLists.txt:
-      ```cmake
-      include(cmake/utilities/clangTidy.cmake)
-      add_clang_tidy(VERSION 19)
-      ```
-    - Enable clang-tidy check for a specific target using:
-      ```cmake
-      if(CLANG_TIDY)
-          set_target_properties(exampleLibrary PROPERTIES CXX_CLANG_TIDY ${CLANG_TIDY})
-      endif()
-      ```
+Sets up the project to use clang-tidy for static analysis. In root CMakeLists.txt use the following:
+
+```cmake
+include(cmake/utilities/clangTidy.cmake)
+add_clang_tidy(VERSION 19)
+```
+
+Enable clang-tidy check for a specific target using:
+
+```cmake
+if(CLANG_TIDY)
+  set_target_properties(exampleLibrary PROPERTIES CXX_CLANG_TIDY ${CLANG_TIDY})
+endif()
+```
 
 ## 🛠️ Tools
 
