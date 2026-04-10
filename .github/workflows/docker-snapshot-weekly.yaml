@@ -1,0 +1,31 @@
+name: docker-snapshot-weekly
+
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Every Sunday at midnight UTC
+  workflow_dispatch:
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        source:
+          - ubuntu:rolling
+          - ubuntu:latest
+          - ubuntu:24.04
+          - ubuntu:22.04
+    steps:
+      - name: setup-login
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: pull-retag-push
+        uses: ajakhotia/infraCommons/.github/actions/docker-pull-retag-push@main
+        with:
+          source: ${{ matrix.source }}
+          destination: ghcr.io/ajakhotia/infracommons/weekly/${{ matrix.source }}

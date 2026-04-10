@@ -1,0 +1,41 @@
+name: docker-pull-retag-push
+description: |
+  Pulls a publicly available Docker image, retags it, and pushes it to a
+  target registry. Useful for caching upstream images on a schedule.
+
+inputs:
+  source:
+    required: true
+    description: "Source image reference to pull (e.g. ubuntu:24.04)."
+
+  destination:
+    required: true
+    description: "Destination image reference to push (e.g. ghcr.io/org/repo/ubuntu:24.04)."
+
+runs:
+  using: "composite"
+  steps:
+    - name: pull-retag-push
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        source="${{ inputs.source }}"
+        destination="${{ inputs.destination }}"
+
+        echo "::group::Pulling ${source}"
+        docker pull "${source}"
+        echo "::endgroup::"
+
+        echo "::group::Tagging as ${destination}"
+        docker tag "${source}" "${destination}"
+        echo "::endgroup::"
+
+        echo "::group::Pushing ${destination}"
+        docker push "${destination}"
+        echo "::endgroup::"
+
+        echo "### Cached image" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Source | Destination |"  >> "$GITHUB_STEP_SUMMARY"
+        echo "| ------ | ----------- |"  >> "$GITHUB_STEP_SUMMARY"
+        echo "| \`${source}\` | \`${destination}\` |" >> "$GITHUB_STEP_SUMMARY"
