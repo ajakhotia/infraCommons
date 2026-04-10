@@ -1,0 +1,54 @@
+name: oci-compliant-image-name
+description: |
+  Constructs an OCI-compliant image name from a registry, repository, and build
+  name. Each component is normalized to conform to OCI naming rules.
+
+inputs:
+  registry:
+    required: false
+    description: "Registry to use."
+    default: ghcr.io
+
+  repository:
+    required: false
+    description: "Repository name. Defaults to the current GitHub repository."
+    default: ${{ github.repository }}
+
+  build-name:
+    required: true
+    description: "Name of the build (e.g. 'ubuntu:22.04/linux-clang-19/deploy')."
+
+outputs:
+  name:
+    description: "OCI-compliant fully qualified image name."
+    value: ${{ steps.assemble.outputs.name }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: normalized-repository
+      id: normalized-repository
+      uses: ajakhotia/infraCommons/.github/actions/normalize@main
+      with:
+        string: ${{ inputs.repository }}
+
+    - name: normalized-build-name
+      id: normalized-build-name
+      uses: ajakhotia/infraCommons/.github/actions/normalize@main
+      with:
+        string: ${{ inputs.build-name }}
+
+    - name: assemble
+      id: assemble
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        image_name="${{ format(
+          '{0}/{1}/{2}',
+          inputs.registry,
+          steps.normalized-repository.outputs.string,
+          steps.normalized-build-name.outputs.string
+        ) }}"
+
+        echo "name=${image_name}" >> "$GITHUB_OUTPUT"
