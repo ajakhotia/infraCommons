@@ -3,6 +3,10 @@ description: |
   Builds a stage out of a dockerfile, pushes it as a tagged image, and manages
   build caches automatically via registry cache.
 
+  NOTE: Callers must set up a buildx builder (docker/setup-buildx-action) once
+  per job before invoking this action. This ensures sequential stage builds
+  within the same job share BuildKit's internal cache.
+
 inputs:
   dockerfile:
     required: true
@@ -16,6 +20,15 @@ inputs:
     required: true
     description: "Fully qualified image name (e.g. ghcr.io/owner/repo/build/stage)."
 
+  shared-cache:
+    required: false
+    description: |
+      Fully qualified registry ref for a shared build cache
+      (e.g. ghcr.io/owner/repo:cache). When provided, the build reads from and
+      writes to this shared cache in addition to the per-image cache. Use the
+      same value across all stages of a multi-stage dockerfile to share layers
+      between stages built in separate jobs or runs.
+
   build-args:
     required: false
     description: "Build arguments to pass to docker."
@@ -23,12 +36,9 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: setup-buildx
-      uses: docker/setup-buildx-action@v3
-
     - name: docker-metadata
       id: docker-metadata
-      uses: docker/metadata-action@v5
+      uses: docker/metadata-action@v6
       with:
         images: ${{ inputs.image-name }}
         tags: |
@@ -38,7 +48,7 @@ runs:
           type=semver,pattern={{major}}.{{minor}}
 
     - name: docker-stage-build
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v7
       with:
         context: .
         file: ${{ inputs.dockerfile }}
@@ -46,7 +56,11 @@ runs:
         push: true
         tags: ${{ steps.docker-metadata.outputs.tags }}
         labels: ${{ steps.docker-metadata.outputs.labels }}
-        cache-from: type=registry,ref=${{ inputs.image-name }}:cache
-        cache-to: type=registry,ref=${{ inputs.image-name }}:cache,mode=max
+        cache-from: |
+          type=registry,ref=${{ inputs.image-name }}:cache
+          ${{ inputs.shared-cache && format('type=registry,ref={0}', inputs.shared-cache) || '' }}
+        cache-to: |
+          type=registry,ref=${{ inputs.image-name }}:cache,mode=max
+          ${{ inputs.shared-cache && format('type=registry,ref={0},mode=max', inputs.shared-cache) || '' }}
         build-args: |
           ${{ inputs.build-args }}
