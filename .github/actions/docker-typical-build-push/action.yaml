@@ -20,14 +20,24 @@ inputs:
     required: true
     description: "Fully qualified image name (e.g. ghcr.io/owner/repo/build/stage)."
 
-  shared-cache:
+  shared-cache-from:
     required: false
     description: |
-      Fully qualified registry ref for a shared build cache
-      (e.g. ghcr.io/owner/repo:cache). When provided, the build reads from and
-      writes to this shared cache in addition to the per-image cache. Use the
-      same value across all stages of a multi-stage dockerfile to share layers
-      between stages built in separate jobs or runs.
+      Newline-separated list of fully qualified registry refs to use as
+      additional read-only cache sources
+      (e.g. ghcr.io/owner/repo/base:cache). The build pulls layers from
+      these refs but never writes back to them. Use this to consume caches
+      produced by earlier jobs without risk of overwriting them.
+
+  shared-cache-to:
+    required: false
+    description: |
+      Newline-separated list of fully qualified registry refs to use as
+      shared read-write caches (e.g. ghcr.io/owner/repo/toolchain:cache).
+      The build both reads from and writes to these refs in addition to the
+      per-image cache. Each ref should be owned by a single build matrix
+      entry to avoid cache contention — concurrent writers to the same ref
+      will overwrite each other.
 
   build-args:
     required: false
@@ -47,6 +57,35 @@ runs:
           type=semver,pattern={{version}}
           type=semver,pattern={{major}}.{{minor}}
 
+    - name: expand-shared-caches
+      id: expand-shared-caches
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        cache_from=""
+        cache_to=""
+
+        while IFS= read -r ref; do
+          [ -z "$ref" ] && continue
+          cache_from="${cache_from}type=registry,ref=${ref}"$'\n'
+        done <<< "${{ inputs.shared-cache-from }}"
+
+        while IFS= read -r ref; do
+          [ -z "$ref" ] && continue
+          cache_from="${cache_from}type=registry,ref=${ref}"$'\n'
+          cache_to="${cache_to}type=registry,ref=${ref},mode=max"$'\n'
+        done <<< "${{ inputs.shared-cache-to }}"
+
+        {
+          echo "cache-from<<EXPAND_EOF"
+          echo -n "$cache_from"
+          echo "EXPAND_EOF"
+          echo "cache-to<<EXPAND_EOF"
+          echo -n "$cache_to"
+          echo "EXPAND_EOF"
+        } >> "$GITHUB_OUTPUT"
+
     - name: docker-stage-build
       uses: docker/build-push-action@v7
       with:
@@ -58,9 +97,9 @@ runs:
         labels: ${{ steps.docker-metadata.outputs.labels }}
         cache-from: |
           type=registry,ref=${{ inputs.image-name }}:cache
-          ${{ inputs.shared-cache && format('type=registry,ref={0}', inputs.shared-cache) || '' }}
+          ${{ steps.expand-shared-caches.outputs.cache-from }}
         cache-to: |
           type=registry,ref=${{ inputs.image-name }}:cache,mode=max
-          ${{ inputs.shared-cache && format('type=registry,ref={0},mode=max', inputs.shared-cache) || '' }}
+          ${{ steps.expand-shared-caches.outputs.cache-to }}
         build-args: |
           ${{ inputs.build-args }}
