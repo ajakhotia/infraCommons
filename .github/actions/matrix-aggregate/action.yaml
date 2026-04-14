@@ -1,0 +1,21 @@
+name: matrix-aggregate
+description: |
+  Checks the result of a matrix job and fails if any run did not succeed.
+  Use this in an aggregate job with `if: always()` and `needs: [matrix-job]`.
+
+inputs:
+  result:
+    required: true
+    description: "Result of the upstream job (pass needs.<job>.result)."
+
+runs:
+  using: "composite"
+  steps:
+    - name: check-result
+      shell: bash
+      run: |
+        echo "Result: ${{ inputs.result }}"
+        if [ "${{ inputs.result }}" != "success" ]; then
+          echo "One or more matrix runs failed."
+          exit 1
+        fi
