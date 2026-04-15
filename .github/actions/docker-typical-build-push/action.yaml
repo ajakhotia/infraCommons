@@ -1,47 +1,73 @@
 name: docker-typical-build-push
 description: |
   Builds a stage out of a dockerfile, pushes it as a tagged image, and manages
-  build caches automatically via registry cache.
+  build caches automatically.
+
+  Supports two cache backends:
+    - gha:      Uses GitHub Actions cache (default). Uses the repository name
+                as a single shared scope so all stages and matrix entries
+                contribute to and benefit from one content-addressed cache pool.
+                shared-cache-from and shared-cache-to are ignored for this
+                backend. Subject to the 10 GB per-repo Actions cache limit.
+    - registry: Uses an OCI registry as cache storage. shared-cache-from and
+                shared-cache-to accept fully qualified registry refs
+                (e.g. ghcr.io/owner/repo/base:cache). No size limit beyond
+                registry quotas.
 
   NOTE: Callers must set up a buildx builder (docker/setup-buildx-action) once
-  per job before invoking this action. This ensures sequential stage builds
-  within the same job share BuildKit's internal cache.
+  per job before invoking this action.
 
 inputs:
   dockerfile:
     required: true
-    description: "Dockerfile to build."
+    description: |
+      Path to the Dockerfile to build.
+      Example: "docker/ubuntu.dockerfile"
 
   target-stage:
     required: true
-    description: "Stage to build."
+    description: |
+      Name of the multi-stage build target to build.
+      Example: "base", "build", "deploy"
 
   image-name:
     required: true
-    description: "Fully qualified image name (e.g. ghcr.io/owner/repo/build/stage)."
+    description: |
+      Fully qualified image name used for tagging and pushing.
+      Example: "ghcr.io/owner/repo/build/stage"
+
+  cache-backend:
+    required: false
+    default: gha
+    description: |
+      Selects the Docker layer cache backend.
+      Accepted values: "gha", "registry"
 
   shared-cache-from:
     required: false
     description: |
-      Newline-separated list of fully qualified registry refs to use as
-      additional read-only cache sources
-      (e.g. ghcr.io/owner/repo/base:cache). The build pulls layers from
-      these refs but never writes back to them. Use this to consume caches
-      produced by earlier jobs without risk of overwriting them.
+      Newline-separated list of read-only cache sources. The build pulls
+      layers from these but never writes back to them. Use this to consume
+      caches produced by earlier jobs without risk of overwriting them.
+      Only read when cache-backend is "registry". Ignored for "gha".
+      Example: "ghcr.io/owner/repo/base:cache"
 
   shared-cache-to:
     required: false
     description: |
-      Newline-separated list of fully qualified registry refs to use as
-      shared read-write caches (e.g. ghcr.io/owner/repo/toolchain:cache).
-      The build both reads from and writes to these refs in addition to the
-      per-image cache. Each ref should be owned by a single build matrix
-      entry to avoid cache contention — concurrent writers to the same ref
-      will overwrite each other.
+      Newline-separated list of read-write shared caches. The build both
+      reads from and writes to these in addition to the per-image cache.
+      Each ref should be owned by a single build matrix entry to avoid
+      cache contention — concurrent writers to the same ref will overwrite
+      each other.
+      Only read when cache-backend is "registry". Ignored for "gha".
+      Example: "ghcr.io/owner/repo/toolchain:cache"
 
   build-args:
     required: false
-    description: "Build arguments to pass to docker."
+    description: |
+      Docker build arguments to forward to the build.
+      Example: "OS_BASE=ubuntu:24.04"
 
 runs:
   using: "composite"
@@ -63,19 +89,29 @@ runs:
       run: |
         set -euo pipefail
 
+        backend="${{ inputs.cache-backend }}"
         cache_from=""
         cache_to=""
 
-        while IFS= read -r ref; do
-          [ -z "$ref" ] && continue
-          cache_from="${cache_from}type=registry,ref=${ref}"$'\n'
-        done <<< "${{ inputs.shared-cache-from }}"
+        if [ "$backend" = "registry" ]; then
+          while IFS= read -r ref; do
+            [ -z "$ref" ] && continue
+            cache_from="${cache_from}type=registry,ref=${ref}"$'\n'
+          done <<< "${{ inputs.shared-cache-from }}"
 
-        while IFS= read -r ref; do
-          [ -z "$ref" ] && continue
-          cache_from="${cache_from}type=registry,ref=${ref}"$'\n'
-          cache_to="${cache_to}type=registry,ref=${ref},mode=max"$'\n'
-        done <<< "${{ inputs.shared-cache-to }}"
+          while IFS= read -r ref; do
+            [ -z "$ref" ] && continue
+            cache_from="${cache_from}type=registry,ref=${ref}"$'\n'
+            cache_to="${cache_to}type=registry,ref=${ref},mode=max"$'\n'
+          done <<< "${{ inputs.shared-cache-to }}"
+
+        elif [ "$backend" = "gha" ]; then
+          : # GHA uses a single repo-scoped cache; shared-cache inputs are ignored.
+
+        else
+          echo "::error::Invalid cache-backend '${backend}'. Must be 'gha' or 'registry'."
+          exit 1
+        fi
 
         {
           echo "cache-from<<EXPAND_EOF"
@@ -86,7 +122,9 @@ runs:
           echo "EXPAND_EOF"
         } >> "$GITHUB_OUTPUT"
 
-    - name: docker-stage-build
+    - name: docker-stage-build-registry
+      id: docker-stage-build-registry
+      if: inputs.cache-backend == 'registry'
       uses: docker/build-push-action@v7
       with:
         context: .
@@ -101,5 +139,23 @@ runs:
         cache-to: |
           type=registry,ref=${{ inputs.image-name }}:cache,mode=max
           ${{ steps.expand-shared-caches.outputs.cache-to }}
+        build-args: |
+          ${{ inputs.build-args }}
+
+    - name: docker-stage-build-gha
+      id: docker-stage-build-gha
+      if: inputs.cache-backend == 'gha'
+      uses: docker/build-push-action@v7
+      with:
+        context: .
+        file: ${{ inputs.dockerfile }}
+        target: ${{ inputs.target-stage }}
+        push: true
+        tags: ${{ steps.docker-metadata.outputs.tags }}
+        labels: ${{ steps.docker-metadata.outputs.labels }}
+        cache-from: |
+          type=gha,scope=${{ github.repository }}
+        cache-to: |
+          type=gha,scope=${{ github.repository }},mode=max
         build-args: |
           ${{ inputs.build-args }}
