@@ -68,26 +68,15 @@ readonly KEYRING_PATH="${KEYRING_DIR}/llvm-archive-keyring.gpg"
 readonly SOURCES_DIR="/etc/apt/sources.list.d"
 readonly SOURCES_FILE="${SOURCES_DIR}/llvm-toolchain.list"
 
-# Candidate LLVM major versions to probe (broad range)
-CANDIDATE_VERSIONS=(3.9 4.0 5 6.0 7 8 9 10 11 12 13 14 15 16 17 18 19 20)
-
-# Probe helper: check if suite exists for this codename
-suite_exists() {
-  local suite="$1"
-  local url="${APT_LLVM_HOST}/${CODENAME}/dists/${suite}/Release"
-  curl -fsIL "$url" >/dev/null 2>&1
-}
-
-# Build list of suites to add
-declare -a suites_to_add=()
-if suite_exists "llvm-toolchain-${CODENAME}"; then
-  suites_to_add+=("llvm-toolchain-${CODENAME}")
-fi
-for ver in "${CANDIDATE_VERSIONS[@]}"; do
-  if suite_exists "llvm-toolchain-${CODENAME}-${ver}"; then
-    suites_to_add+=("llvm-toolchain-${CODENAME}-${ver}")
-  fi
-done
+# Discover every suite apt.llvm.org publishes for this codename by parsing the
+# Apache directory index at /<codename>/dists/. Avoids hardcoding a version
+# list — new LLVM majors are picked up automatically as upstream publishes them.
+mapfile -t suites_to_add < <(
+  curl -fsSL --compressed "${APT_LLVM_HOST}/${CODENAME}/dists/"                 \
+    | grep -oE "llvm-toolchain-${CODENAME}(-[0-9]+)?/"                          \
+    | tr -d '/'                                                                 \
+    | sort -u
+)
 
 if [[ ${#suites_to_add[@]} -eq 0 ]]; then
   echo "No LLVM suites found for '${CODENAME}' at ${APT_LLVM_HOST}." >&2
