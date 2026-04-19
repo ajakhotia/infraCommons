@@ -1,7 +1,6 @@
 set(CMAKE_HOST_SYSTEM_NAME "Linux")
 set(CMAKE_C_COMPILER /usr/bin/clang)
 set(CMAKE_CXX_COMPILER /usr/bin/clang++)
-set(CMAKE_Fortran_COMPILER /usr/bin/flang-new)
 
 execute_process(
     COMMAND ${CMAKE_C_COMPILER} -dumpversion
@@ -9,6 +8,25 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 string(REGEX MATCH "^[0-9]+" CLANG_MAJOR "${CLANG_VERSION}")
+
+# Flang binary was renamed `flang-new` → `flang` in LLVM 20. Pick the
+# right name for the detected clang major, preferring a version-suffixed
+# binary over the unversioned default.
+if(CLANG_MAJOR GREATER_EQUAL 20)
+  set(FLANG_CANDIDATES "/usr/bin/flang-${CLANG_MAJOR}" "/usr/bin/flang")
+else()
+  set(FLANG_CANDIDATES "/usr/bin/flang-new-${CLANG_MAJOR}" "/usr/bin/flang-new")
+endif()
+set(CMAKE_Fortran_COMPILER "")
+foreach(FLANG_CANDIDATE IN LISTS FLANG_CANDIDATES)
+  if(EXISTS "${FLANG_CANDIDATE}")
+    set(CMAKE_Fortran_COMPILER "${FLANG_CANDIDATE}")
+    break()
+  endif()
+endforeach()
+if(NOT CMAKE_Fortran_COMPILER)
+  message(FATAL_ERROR "No flang binary found for clang major ${CLANG_MAJOR}. Tried: ${FLANG_CANDIDATES}")
+endif()
 
 include(${CMAKE_CURRENT_LIST_DIR}/cuda.cmake)
 
