@@ -19,20 +19,22 @@ EX_CONFIG=78      # configuration error
 
 print_usage() {
   printf '%s\n' \
-    "Usage: sh installSystemDependencies.sh <GROUP NAME> <PATH TO systemDependencies.json>" \
+    "Usage: sh extractDependencies.sh <GROUP NAMES> <PATH TO systemDependencies.json>" \
     "" \
     "Arguments:" \
-    "  <GROUP NAME>              Name of the dependency group to query." \
+    "  <GROUP NAMES>                       One or more whitespace-separated group names to query." \
     "  <PATH TO systemDependencies.json>   Path to the JSON file containing dependency definitions." \
     "" \
     "The script detects your OS and version, then looks up an exact key match" \
-    "in the JSON (format: '<os_id>:<version>')." \
+    "in the JSON (format: '<os_id>:<version>') for each group and emits their" \
+    "dependency strings joined by a single space." \
     "" \
     "Refer to the \"groups\" array in the JSON file to see valid group names" \
     "and the OS keys available for each group." \
     "" \
-    "Example:" \
-    "  sh installSystemDependencies.sh build ./systemDependencies.json" >&2
+    "Examples:" \
+    "  sh extractDependencies.sh Basics ./systemDependencies.json" \
+    "  sh extractDependencies.sh \"Basics Compilers\" ./systemDependencies.json" >&2
 }
 
 fail() {
@@ -81,12 +83,39 @@ detect_os() {
   esac
 }
 
+# Resolve the dependency string for a single group on stdout. Unknown groups are
+# skipped with a warning (empty stdout); groups present in the JSON but missing
+# an entry for the current OS key are a hard error.
+resolve_group() {
+  group="${1}"
+
+  if ! jq -e --arg GRP "${group}" '.groups[] | select(.group == $GRP)' "${DEPENDENCIES_JSON_PATH}" > /dev/null; then
+    printf 'No system dependencies specified for "%s".\n' "${group}" >&2
+    return 0
+  fi
+
+  value="$(jq -r \
+    --arg GRP "${group}" \
+    --arg KEY "${OS_KEY}" \
+    '.groups[] | select(.group == $GRP) | .[$KEY] // empty' \
+    "${DEPENDENCIES_JSON_PATH}")"
+
+  if [ -z "${value}" ] || [ "${value}" = "null" ]; then
+    printf 'Error: no exact entry for key "%s" in group "%s".\n' "${OS_KEY}" "${group}" >&2
+    printf 'Known keys for this group:\n' >&2
+    jq -r --arg GRP "${group}" '.groups[] | select(.group == $GRP) | keys[]' "${DEPENDENCIES_JSON_PATH}" >&2
+    exit ${EX_DATAERR}
+  fi
+
+  printf '%s' "${value}"
+}
+
 # ---------- Main ----------
 
-GROUP_NAME="${1:-}"
+GROUP_NAMES="${1:-}"
 DEPENDENCIES_JSON_PATH="${2:-}"
 
-if [ -z "${GROUP_NAME}" ] || [ -z "${DEPENDENCIES_JSON_PATH}" ]; then
+if [ -z "${GROUP_NAMES}" ] || [ -z "${DEPENDENCIES_JSON_PATH}" ]; then
   print_usage
   exit ${EX_USAGE}
 fi
@@ -97,25 +126,20 @@ detect_os
 
 OS_KEY="${OS_ID}:${OS_VERSION}"
 
-# Ensure the group exists
-if ! jq -e --arg GRP "${GROUP_NAME}" '.groups[] | select(.group == $GRP)' "${DEPENDENCIES_JSON_PATH}" > /dev/null; then
-  printf 'No system dependencies specified for "%s".\n' "${GROUP_NAME}" >&2
-  exit ${EX_OK}
-fi
+# Iterate over whitespace-separated group names and print each group's deps
+# joined by a single space. Unquoted expansion is intentional — we rely on the
+# shell word-splitting GROUP_NAMES into individual group tokens.
+OUTPUT=""
+# shellcheck disable=SC2086
+for group in ${GROUP_NAMES}; do
+  value="$(resolve_group "${group}")"
+  if [ -n "${value}" ]; then
+    if [ -z "${OUTPUT}" ]; then
+      OUTPUT="${value}"
+    else
+      OUTPUT="${OUTPUT} ${value}"
+    fi
+  fi
+done
 
-# Exact lookup
-VALUE="$(jq -r \
-  --arg GRP "${GROUP_NAME}" \
-  --arg KEY "${OS_KEY}" \
-  '.groups[] | select(.group == $GRP) | .[$KEY] // empty' \
-  "${DEPENDENCIES_JSON_PATH}")"
-
-if [ -z "${VALUE}" ] || [ "${VALUE}" = "null" ]; then
-  printf 'Error: no exact entry for key "%s" in group "%s".\n' "${OS_KEY}" "${GROUP_NAME}" >&2
-  printf 'Known keys for this group:\n' >&2
-  jq -r --arg GRP "${GROUP_NAME}" '.groups[] | select(.group == $GRP) | keys[]' "${DEPENDENCIES_JSON_PATH}" >&2
-  exit ${EX_DATAERR}
-fi
-
-# Print exactly (no extra newline)
-printf '%s' "${VALUE}"
+printf '%s' "${OUTPUT}"
