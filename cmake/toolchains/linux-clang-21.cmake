@@ -1,6 +1,6 @@
 set(CMAKE_HOST_SYSTEM_NAME "Linux")
-set(CMAKE_C_COMPILER /usr/bin/clang-23)
-set(CMAKE_CXX_COMPILER /usr/bin/clang++-23)
+set(CMAKE_C_COMPILER /usr/bin/clang-21)
+set(CMAKE_CXX_COMPILER /usr/bin/clang++-21)
 set(CMAKE_Fortran_COMPILER /usr/bin/flang-22)
 set(CMAKE_EXE_LINKER_FLAGS "-L/usr/lib/llvm-22/lib -Wl,-rpath,/usr/lib/llvm-22/lib")
 
