@@ -1,0 +1,57 @@
+name: test-docker-pull-retag-push
+
+on:
+  pull_request:
+    paths:
+      - '.github/actions/docker-pull-retag-push/**'
+      - '.github/workflows/test-docker-pull-retag-push.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: self-checkout
+        id: self-checkout
+        uses: actions/checkout@v6
+
+      - name: setup-login
+        id: setup-login
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: compute-destination
+        id: compute-destination
+        shell: bash
+        env:
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          repo_lower="$(printf '%s' "${REPOSITORY}" | tr '[:upper:]' '[:lower:]')"
+          echo "destination=ghcr.io/${repo_lower}/action-tests/docker-pull-retag-push/hello-world:${RUN_ID}" >> "${GITHUB_OUTPUT}"
+
+      - name: pull-retag-push
+        id: pull-retag-push
+        uses: ./.github/actions/docker-pull-retag-push
+        with:
+          source: hello-world:latest
+          destination: ${{ steps.compute-destination.outputs.destination }}
+
+      - name: assert-pushed
+        id: assert-pushed
+        shell: bash
+        env:
+          DESTINATION: ${{ steps.compute-destination.outputs.destination }}
+        run: |
+          set -euo pipefail
+          docker manifest inspect "${DESTINATION}" > /dev/null
+          echo "OK: ${DESTINATION} pushed and inspectable"

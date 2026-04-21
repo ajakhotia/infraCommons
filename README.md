@@ -424,17 +424,17 @@ Real-world usage:
 
 ### 🧐 cmake-find-package
 
-Verifies that a library is installed and discoverable inside a published Docker image. Pulls the
-target image, runs
+Verifies that one or more libraries are installed and discoverable inside a published Docker image.
+Pulls the target image, runs
 [ajakhotia/importTester](https://github.com/ajakhotia/importTester) inside it, and invokes
-`find_package(<library-name> REQUIRED)` against the supplied `CMAKE_PREFIX_PATH`. Catches packaging
-regressions before downstream consumers ever pull the image.
+`find_package(<library> REQUIRED)` for each entry in `library-names` against the supplied
+`CMAKE_PREFIX_PATH`. Catches packaging regressions before downstream consumers ever pull the image.
 
 ```yaml
 - name: find-library
   uses: ajakhotia/infraCommons/.github/actions/cmake-find-package@main
   with:
-    library-name: <library-name>
+    library-names: <semicolon-delimited-library-names>
     prefix-path: <cmake-prefix-path>  # optional
     image-name: <fully-qualified-image-name>
 ```

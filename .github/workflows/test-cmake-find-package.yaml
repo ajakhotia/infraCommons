@@ -1,0 +1,74 @@
+name: test-cmake-find-package
+
+on:
+  pull_request:
+    paths:
+      - '.github/actions/cmake-find-package/**'
+      - '.github/workflows/test-cmake-find-package.yaml'
+  workflow_dispatch:
+
+jobs:
+  positive:
+    name: positive
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        case:
+          - name: single-library
+            library-names: fmt
+            apt-packages: build-essential libfmt-dev
+          - name: multi-library
+            library-names: fmt;Eigen3
+            apt-packages: build-essential libfmt-dev libeigen3-dev
+
+    steps:
+      - name: self-checkout
+        id: self-checkout
+        uses: actions/checkout@v6
+
+      - name: find-package
+        id: find-package
+        uses: ./.github/actions/cmake-find-package
+        with:
+          image-name: ubuntu:24.04
+          library-names: ${{ matrix.case.library-names }}
+          pre-check: |
+            set -euo pipefail
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update
+            apt-get install -y --no-install-recommends cmake ${{ matrix.case.apt-packages }}
+
+  negative:
+    name: negative
+    runs-on: ubuntu-latest
+    steps:
+      - name: self-checkout
+        id: self-checkout
+        uses: actions/checkout@v6
+
+      - name: find-package
+        id: find-package
+        continue-on-error: true
+        uses: ./.github/actions/cmake-find-package
+        with:
+          image-name: ubuntu:24.04
+          library-names: DefinitelyNotAPackage
+          pre-check: |
+            set -euo pipefail
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update
+            apt-get install -y --no-install-recommends cmake build-essential
+
+      - name: assert-failed
+        id: assert-failed
+        shell: bash
+        env:
+          OUTCOME: ${{ steps.find-package.outcome }}
+        run: |
+          set -euo pipefail
+          if [[ "${OUTCOME}" != "failure" ]]; then
+            echo "::error::Expected find-package to fail for nonexistent library, got outcome='${OUTCOME}'"
+            exit 1
+          fi
+          echo "OK: find-package correctly failed for nonexistent library"

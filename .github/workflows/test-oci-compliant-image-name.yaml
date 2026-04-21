@@ -1,0 +1,66 @@
+name: test-oci-compliant-image-name
+
+on:
+  pull_request:
+    paths:
+      - '.github/actions/oci-compliant-image-name/**'
+      - '.github/actions/normalize/**'
+      - '.github/workflows/test-oci-compliant-image-name.yaml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        case:
+          - name: lowercase-happy-path
+            registry: ghcr.io
+            repository: ajakhotia/infraCommons
+            build-name: ubuntu:24.04/base
+            expected: ghcr.io/ajakhotia/infracommons/ubuntu-24-04/base
+          - name: uppercase-build-name
+            registry: ghcr.io
+            repository: ajakhotia/infraCommons
+            build-name: UBUNTU/BASE
+            expected: ghcr.io/ajakhotia/infracommons/ubuntu/base
+          - name: custom-registry-mixed-case
+            registry: docker.io
+            repository: Org/Repo
+            build-name: Tag:Name
+            expected: docker.io/org/repo/tag-name
+          - name: collapses-repeated-separators
+            registry: ghcr.io
+            repository: a//b
+            build-name: x---y___z
+            expected: ghcr.io/a/b/x-y-z
+
+    steps:
+      - name: self-checkout
+        id: self-checkout
+        uses: actions/checkout@v6
+
+      - name: build-image-name
+        id: build-image-name
+        uses: ./.github/actions/oci-compliant-image-name
+        with:
+          registry: ${{ matrix.case.registry }}
+          repository: ${{ matrix.case.repository }}
+          build-name: ${{ matrix.case.build-name }}
+
+      - name: assert
+        id: assert
+        shell: bash
+        env:
+          GOT: ${{ steps.build-image-name.outputs.name }}
+          EXPECTED: ${{ matrix.case.expected }}
+          CASE: ${{ matrix.case.name }}
+        run: |
+          set -euo pipefail
+          if [[ "${GOT}" != "${EXPECTED}" ]]; then
+            echo "::error::Case='${CASE}': expected='${EXPECTED}' got='${GOT}'"
+            exit 1
+          fi
+          echo "OK: ${CASE} -> ${GOT}"

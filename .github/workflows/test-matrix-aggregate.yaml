@@ -1,0 +1,57 @@
+name: test-matrix-aggregate
+
+on:
+  pull_request:
+    paths:
+      - '.github/actions/matrix-aggregate/**'
+      - '.github/workflows/test-matrix-aggregate.yaml'
+  workflow_dispatch:
+
+jobs:
+  positive:
+    name: positive
+    runs-on: ubuntu-latest
+    steps:
+      - name: self-checkout
+        id: self-checkout
+        uses: actions/checkout@v6
+
+      - name: aggregate
+        id: aggregate
+        uses: ./.github/actions/matrix-aggregate
+        with:
+          result: success
+
+  negative:
+    name: negative
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        result: [failure, cancelled, skipped]
+
+    steps:
+      - name: self-checkout
+        id: self-checkout
+        uses: actions/checkout@v6
+
+      - name: aggregate
+        id: aggregate
+        continue-on-error: true
+        uses: ./.github/actions/matrix-aggregate
+        with:
+          result: ${{ matrix.result }}
+
+      - name: assert-failed
+        id: assert-failed
+        shell: bash
+        env:
+          OUTCOME: ${{ steps.aggregate.outcome }}
+          RESULT: ${{ matrix.result }}
+        run: |
+          set -euo pipefail
+          if [[ "${OUTCOME}" != "failure" ]]; then
+            echo "::error::Expected aggregate to fail for result='${RESULT}', got outcome='${OUTCOME}'"
+            exit 1
+          fi
+          echo "OK: aggregate correctly failed for result='${RESULT}'"
