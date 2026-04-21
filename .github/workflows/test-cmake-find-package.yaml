@@ -17,10 +17,10 @@ jobs:
         case:
           - name: single-library
             library-names: fmt
-            apt-packages: libfmt-dev
+            apt-packages: build-essential libfmt-dev
           - name: multi-library
             library-names: fmt;Eigen3
-            apt-packages: libfmt-dev libeigen3-dev
+            apt-packages: build-essential libfmt-dev libeigen3-dev
 
     steps:
       - name: self-checkout
@@ -58,7 +58,7 @@ jobs:
             set -euo pipefail
             export DEBIAN_FRONTEND=noninteractive
             apt-get update
-            apt-get install -y --no-install-recommends cmake
+            apt-get install -y --no-install-recommends cmake build-essential
 
       - name: assert-failed
         id: assert-failed
