@@ -6,10 +6,11 @@ description: |
   this action to any particular provisioning scheme.
 
 inputs:
-  library-name:
+  library-names:
     description: |
-      Library to test. Forwarded as the argument to a find_package(... REQUIRED) call in cmake.
-      Example: "Boost"
+      Libraries to test. Semicolon-delimited list; each entry is forwarded to a
+      find_package(... REQUIRED) call in cmake via importTester's IMPORT_TESTER_PACKAGE_LIST.
+      Example: "Boost;Eigen3;Ceres"
     required: true
 
   prefix-path:
@@ -102,6 +103,6 @@ runs:
             cmake -S /tmp/importTester-src                                                             \
                   -B /tmp/importTester-build                                                           \
                   -DCMAKE_PREFIX_PATH:STRING="${{ inputs.prefix-path }}"                               \
-                  -DIMPORT_TESTER_PACKAGE_LIST:STRING="${{ inputs.library-name }}"
+                  -DIMPORT_TESTER_PACKAGE_LIST:STRING="${{ inputs.library-names }}"
             bash /tmp/cmake-find-package-hooks/post-check.sh
           '
