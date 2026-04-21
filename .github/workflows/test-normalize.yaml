@@ -1,0 +1,59 @@
+name: test-normalize
+
+on:
+  pull_request:
+    paths:
+      - '.github/actions/normalize/**'
+      - '.github/workflows/test-normalize.yaml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        case:
+          - input: "Hello World"
+            expected: "hello-world"
+          - input: "UPPER/lower"
+            expected: "upper/lower"
+          - input: "---leading-and-trailing---"
+            expected: "leading-and-trailing"
+          - input: "///slashes///"
+            expected: "slashes"
+          - input: "a--b___c"
+            expected: "a-b-c"
+          - input: "a//b///c"
+            expected: "a/b/c"
+          - input: "Mixed:Case:Colons"
+            expected: "mixed-case-colons"
+          - input: "ubuntu:24.04"
+            expected: "ubuntu-24-04"
+
+    steps:
+      - name: self-checkout
+        id: self-checkout
+        uses: actions/checkout@v6
+
+      - name: normalize
+        id: normalize
+        uses: ./.github/actions/normalize
+        with:
+          string: ${{ matrix.case.input }}
+
+      - name: assert
+        id: assert
+        shell: bash
+        env:
+          GOT: ${{ steps.normalize.outputs.string }}
+          EXPECTED: ${{ matrix.case.expected }}
+          INPUT: ${{ matrix.case.input }}
+        run: |
+          set -euo pipefail
+          if [[ "${GOT}" != "${EXPECTED}" ]]; then
+            echo "::error::Input='${INPUT}': expected='${EXPECTED}' got='${GOT}'"
+            exit 1
+          fi
+          echo "OK: '${INPUT}' -> '${GOT}'"

@@ -47,7 +47,7 @@ inputs:
     description: |
       Newline-separated extra `-v` arguments appended to the `docker run` invocation.
       Each line is a single volume spec; blank lines are ignored.
-      Example: "${{ github.workspace }}/artifact:/tmp/artifact:ro"
+      Example: "/home/runner/work/repo/repo/artifact:/tmp/artifact:ro"
     required: false
     default: ""
 

@@ -1,0 +1,63 @@
+name: test-cmake-find-package
+
+on:
+  pull_request:
+    paths:
+      - '.github/actions/cmake-find-package/**'
+      - '.github/workflows/test-cmake-find-package.yaml'
+  workflow_dispatch:
+
+jobs:
+  positive:
+    name: positive
+    runs-on: ubuntu-latest
+    steps:
+      - name: self-checkout
+        id: self-checkout
+        uses: actions/checkout@v6
+
+      - name: find-package
+        id: find-package
+        uses: ./.github/actions/cmake-find-package
+        with:
+          image-name: ubuntu:24.04
+          library-names: fmt
+          pre-check: |
+            set -euo pipefail
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update
+            apt-get install -y --no-install-recommends cmake libfmt-dev
+
+  negative:
+    name: negative
+    runs-on: ubuntu-latest
+    steps:
+      - name: self-checkout
+        id: self-checkout
+        uses: actions/checkout@v6
+
+      - name: find-package
+        id: find-package
+        continue-on-error: true
+        uses: ./.github/actions/cmake-find-package
+        with:
+          image-name: ubuntu:24.04
+          library-names: DefinitelyNotAPackage
+          pre-check: |
+            set -euo pipefail
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update
+            apt-get install -y --no-install-recommends cmake
+
+      - name: assert-failed
+        id: assert-failed
+        shell: bash
+        env:
+          OUTCOME: ${{ steps.find-package.outcome }}
+        run: |
+          set -euo pipefail
+          if [[ "${OUTCOME}" != "failure" ]]; then
+            echo "::error::Expected find-package to fail for nonexistent library, got outcome='${OUTCOME}'"
+            exit 1
+          fi
+          echo "OK: find-package correctly failed for nonexistent library"
