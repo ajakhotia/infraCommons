@@ -11,6 +11,17 @@ jobs:
   positive:
     name: positive
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        case:
+          - name: single-library
+            library-names: fmt
+            apt-packages: libfmt-dev
+          - name: multi-library
+            library-names: fmt;Eigen3
+            apt-packages: libfmt-dev libeigen3-dev
+
     steps:
       - name: self-checkout
         id: self-checkout
@@ -21,12 +32,12 @@ jobs:
         uses: ./.github/actions/cmake-find-package
         with:
           image-name: ubuntu:24.04
-          library-names: fmt
+          library-names: ${{ matrix.case.library-names }}
           pre-check: |
             set -euo pipefail
             export DEBIAN_FRONTEND=noninteractive
             apt-get update
-            apt-get install -y --no-install-recommends cmake libfmt-dev
+            apt-get install -y --no-install-recommends cmake ${{ matrix.case.apt-packages }}
 
   negative:
     name: negative
