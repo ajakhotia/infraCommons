@@ -29,7 +29,7 @@ function(add_clang_format)
             -iname *.cpp -o -iname *.hpp -o
             -iname *.c -o -iname *.h -o
             -iname *.cc -o -iname *.hh
-          \\\) | ${XARGS} ${CLANG_FORMAT} -style=file -i
+          \\\) | ${ACF_XARGS} ${ACF_CLANG_FORMAT} -style=file -i
       WORKING_DIRECTORY
         ${PROJECT_SOURCE_DIR}
       COMMENT

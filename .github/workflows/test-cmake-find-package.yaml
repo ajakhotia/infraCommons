@@ -1,10 +1,15 @@
 name: test-cmake-find-package
 
 on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
   pull_request:
-    paths:
-      - '.github/actions/cmake-find-package/**'
-      - '.github/workflows/test-cmake-find-package.yaml'
+    types: [opened, reopened, synchronize, ready_for_review]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
