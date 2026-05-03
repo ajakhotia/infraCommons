@@ -1,11 +1,15 @@
 name: test-oci-compliant-image-name
 
 on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
   pull_request:
-    paths:
-      - '.github/actions/oci-compliant-image-name/**'
-      - '.github/actions/normalize/**'
-      - '.github/workflows/test-oci-compliant-image-name.yaml'
+    types: [opened, reopened, synchronize, ready_for_review]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:

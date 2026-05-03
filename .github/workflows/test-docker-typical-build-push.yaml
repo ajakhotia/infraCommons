@@ -1,10 +1,15 @@
 name: test-docker-typical-build-push
 
 on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
   pull_request:
-    paths:
-      - '.github/actions/docker-typical-build-push/**'
-      - '.github/workflows/test-docker-typical-build-push.yaml'
+    types: [opened, reopened, synchronize, ready_for_review]
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
