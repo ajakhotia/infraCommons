@@ -19,11 +19,19 @@ EX_CONFIG=78      # configuration error
 
 print_usage() {
   printf '%s\n' \
-    "Usage: sh extractDependencies.sh <GROUP NAMES> <PATH TO systemDependencies.json>" \
+    "Usage: sh extractDependencies.sh [--expand \"VAR1 VAR2 ...\"] <GROUP NAMES> <PATH TO systemDependencies.json>" \
     "" \
     "Arguments:" \
     "  <GROUP NAMES>                       One or more whitespace-separated group names to query." \
     "  <PATH TO systemDependencies.json>   Path to the JSON file containing dependency definitions." \
+    "" \
+    "Options:" \
+    "  --expand \"VAR1 VAR2 ...\"            Whitespace-separated allow-list of environment variables" \
+    "                                      to substitute in resolved dependency strings. Only listed" \
+    "                                      variables are expanded; other \$ patterns pass through" \
+    "                                      verbatim. Each listed variable must be set and non-empty" \
+    "                                      or the script aborts. Requires 'envsubst' ('gettext-base'" \
+    "                                      on Debian/Ubuntu, 'brew install gettext' on macOS)." \
     "" \
     "The script detects your OS and version, then looks up an exact key match" \
     "in the JSON (format: '<os_id>:<version>') for each group and emits their" \
@@ -34,7 +42,8 @@ print_usage() {
     "" \
     "Examples:" \
     "  sh extractDependencies.sh Basics ./systemDependencies.json" \
-    "  sh extractDependencies.sh \"Basics Compilers\" ./systemDependencies.json" >&2
+    "  sh extractDependencies.sh \"Basics Compilers\" ./systemDependencies.json" \
+    "  sh extractDependencies.sh --expand \"ROS_DISTRO\" \"Basics RosDeps\" ./systemDependencies.json" >&2
 }
 
 fail() {
@@ -46,6 +55,10 @@ fail() {
 
 require_jq() {
   command -v jq > /dev/null 2>&1 || fail 127 "jq is required but not installed or not in PATH."
+}
+
+require_envsubst() {
+  command -v envsubst > /dev/null 2>&1 || fail 127 "envsubst is required for --expand but not installed (install 'gettext-base' on Debian/Ubuntu, or 'brew install gettext' on macOS)."
 }
 
 require_readable_file() {
@@ -112,6 +125,33 @@ resolve_group() {
 
 # ---------- Main ----------
 
+# Parse leading options. Stops at first non-option positional, '--', or end of args.
+EXPAND_VARS=""
+while [ $# -gt 0 ]; do
+  case "${1}" in
+    --expand)
+      [ $# -ge 2 ] || { print_usage; fail ${EX_USAGE} "--expand requires an argument."; }
+      EXPAND_VARS="${2}"
+      shift 2
+      ;;
+    --expand=*)
+      EXPAND_VARS="${1#--expand=}"
+      shift
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*)
+      print_usage
+      fail ${EX_USAGE} "unknown option: ${1}"
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
 GROUP_NAMES="${1:-}"
 DEPENDENCIES_JSON_PATH="${2:-}"
 
@@ -123,6 +163,25 @@ fi
 require_jq
 require_readable_file "${DEPENDENCIES_JSON_PATH}"
 detect_os
+
+# Validate every --expand variable is set and non-empty, and build envsubst's
+# allow-list shell-format string ('${VAR1} ${VAR2} ...'). envsubst only
+# substitutes variables whose references appear in this string; other '$'
+# patterns in the JSON pass through verbatim.
+ALLOW_LIST=""
+if [ -n "${EXPAND_VARS}" ]; then
+  require_envsubst
+  # shellcheck disable=SC2086
+  for var in ${EXPAND_VARS}; do
+    eval "value=\${${var}:-}"
+    [ -n "${value}" ] || fail ${EX_CONFIG} "--expand variable '${var}' is unset or empty in environment."
+    if [ -z "${ALLOW_LIST}" ]; then
+      ALLOW_LIST="\${${var}}"
+    else
+      ALLOW_LIST="${ALLOW_LIST} \${${var}}"
+    fi
+  done
+fi
 
 OS_KEY="${OS_ID}:${OS_VERSION}"
 
@@ -142,4 +201,8 @@ for group in ${GROUP_NAMES}; do
   fi
 done
 
-printf '%s' "${OUTPUT}"
+if [ -n "${ALLOW_LIST}" ]; then
+  printf '%s' "${OUTPUT}" | envsubst "${ALLOW_LIST}"
+else
+  printf '%s' "${OUTPUT}"
+fi
