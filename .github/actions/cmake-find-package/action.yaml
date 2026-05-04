@@ -27,7 +27,9 @@ inputs:
 
   pre-check:
     description: |
-      Bash commands executed inside the container before the find_package check runs.
+      Bash commands sourced inside the container before the find_package check runs.
+      Sourced (not exec), so `export`s, `cd`s, and shell functions carry into the
+      cmake call — e.g. `export CMAKE_GENERATOR=Ninja` to pick a generator.
       Typical use is to extract an archive and apt-install runtime dependencies.
       Ignored when empty.
       Example: "apt-get update && apt-get install -y cmake build-essential"
@@ -36,7 +38,8 @@ inputs:
 
   post-check:
     description: |
-      Bash commands executed inside the container after the find_package check runs.
+      Bash commands sourced inside the container after the find_package check runs.
+      Sourced (not exec) for symmetry with pre-check.
       Typical use is to surface logs or run post-install sanity checks.
       Ignored when empty.
       Example: "cat /tmp/importTester-build/CMakeCache.txt"
@@ -99,10 +102,10 @@ runs:
           ${{ inputs.image-name }}                                                                     \
           bash -c '
             set -euo pipefail
-            bash /tmp/cmake-find-package-hooks/pre-check.sh
+            source /tmp/cmake-find-package-hooks/pre-check.sh
             cmake -S /tmp/importTester-src                                                             \
                   -B /tmp/importTester-build                                                           \
                   -DCMAKE_PREFIX_PATH:STRING="${{ inputs.prefix-path }}"                               \
                   -DIMPORT_TESTER_PACKAGE_LIST:STRING="${{ inputs.library-names }}"
-            bash /tmp/cmake-find-package-hooks/post-check.sh
+            source /tmp/cmake-find-package-hooks/post-check.sh
           '
