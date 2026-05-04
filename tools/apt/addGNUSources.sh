@@ -6,17 +6,15 @@ if [[ "${1:-}" == "-y" ]]; then
   assume_yes=true
 fi
 
+if [[ $EUID -ne 0 ]]; then
+  echo "This script must be run as root (use sudo)." >&2
+  exit 1
+fi
+
 require_confirmation() {
   if $assume_yes; then return 0; fi
   read -r -p "Proceed? [y/N]: " ans
   [[ "${ans,,}" == "y" || "${ans,,}" == "yes" ]]
-}
-
-need_root() {
-  if [[ $EUID -ne 0 ]]; then
-    echo "This script needs root for system changes. Re-running with sudo..."
-    exec sudo --preserve-env=assume_yes bash "$0" ${assume_yes:+-y}
-  fi
 }
 
 # Detect OS
@@ -41,16 +39,13 @@ case "${ID:-}" in
       echo "Aborted by user."
       exit 0
     fi
-    need_root
-    if ! grep -qi 'ubuntu-toolchain-r/test' /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
+    if ! grep -qriE 'ubuntu-toolchain-r/test' /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null; then
       echo "Adding Ubuntu Toolchain PPA..."
-      add-apt-repository -y ppa:ubuntu-toolchain-r/test
+      add-apt-repository -y -n ppa:ubuntu-toolchain-r/test
     else
       echo "Ubuntu Toolchain PPA already present. Skipping add."
     fi
-    echo "Updating package lists..."
-    apt-get update -y
-    echo "Done. You can now install specific GCC/G++ versions from this PPA."
+    echo "Done. Run 'apt-get update' before installing GCC/G++ from this PPA."
     ;;
 
   debian)
@@ -69,6 +64,7 @@ case "${ID:-}" in
 
     suite="${codename}-backports"
     list_file="/etc/apt/sources.list.d/${suite}.list"
+    keyring="/usr/share/keyrings/debian-archive-keyring.gpg"
 
     echo
     echo "Plan:"
@@ -80,17 +76,14 @@ case "${ID:-}" in
       echo "Aborted by user."
       exit 0
     fi
-    need_root
-    if [[ ! -f "$list_file" ]]; then
-      echo "Adding ${suite} repository..."
-      printf "deb http://deb.debian.org/debian %s main\n" "$suite" > "$list_file"
-      printf "deb-src http://deb.debian.org/debian %s main\n" "$suite" >> "$list_file"
+    if grep -qriE "(^|[[:space:]])${suite}([[:space:]]|$)" /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null; then
+      echo "${suite} repository already present. Skipping add."
     else
-      echo "${suite} repository already present at ${list_file}. Skipping add."
+      echo "Adding ${suite} repository..."
+      printf "deb [signed-by=%s] https://deb.debian.org/debian %s main\n" "$keyring" "$suite" > "$list_file"
+      printf "deb-src [signed-by=%s] https://deb.debian.org/debian %s main\n" "$keyring" "$suite" >> "$list_file"
     fi
-    echo "Updating package lists..."
-    apt-get update -y
-    echo "Done. You can now install specific GCC/G++ versions from backports."
+    echo "Done. Run 'apt-get update' before installing GCC/G++ from backports."
     ;;
 
   *)

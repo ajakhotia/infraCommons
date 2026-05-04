@@ -126,6 +126,4 @@ fi
 } > "${SOURCES_FILE}"
 chmod 0644 "${SOURCES_FILE}"
 
-# Update
-apt-get update
-echo "LLVM sources configured."
+echo "LLVM sources configured. Run 'apt-get update' before installing."

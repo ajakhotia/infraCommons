@@ -6,17 +6,15 @@ if [[ "${1:-}" == "-y" ]]; then
   assume_yes=true
 fi
 
+if [[ $EUID -ne 0 ]]; then
+  echo "This script must be run as root (use sudo)." >&2
+  exit 1
+fi
+
 confirm() {
   if $assume_yes; then return 0; fi
   read -r -p "Proceed? [y/N]: " ans
   [[ "${ans,,}" == "y" || "${ans,,}" == "yes" ]]
-}
-
-need_root() {
-  if [[ $EUID -ne 0 ]]; then
-    echo "Elevating privileges with sudo..."
-    exec sudo --preserve-env=assume_yes bash "$0" ${assume_yes:+-y}
-  fi
 }
 
 # OS detection
@@ -66,33 +64,28 @@ echo "  • Update package lists"
 echo
 if ! confirm; then echo "Aborted by user."; exit 0; fi
 
-need_root
-
 # Create keyrings dir if missing
 mkdir -p "$(dirname "$keyring_dest")"
 
-# Install/refresh keyring
+# Install/refresh keyring (atomic write via .tmp + mv)
 echo "Fetching NVIDIA CUDA keyring..."
-curl -fsSL "$keyring_url" -o "$keyring_dest"
+keyring_tmp="${keyring_dest}.tmp"
+trap 'rm -f "$keyring_tmp"' EXIT
+curl -fsSL "$keyring_url" -o "$keyring_tmp"
+chmod 0644 "$keyring_tmp"
+mv "$keyring_tmp" "$keyring_dest"
 
-# Add/refresh APT source
+# Add APT source if not already present anywhere under sources.list*
 repo_line="deb [signed-by=${keyring_dest}] ${repo_base} /"
-if [[ ! -f "$list_file" ]]; then
+nvidia_repo_pattern="developer\.download\.nvidia\.com/compute/cuda/repos/${repo_distro}"
+if grep -qrE "$nvidia_repo_pattern" /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null; then
+  echo "NVIDIA CUDA APT source for ${repo_distro} already present. Skipping add."
+else
   echo "Adding CUDA APT source to ${list_file}..."
   printf "%s\n" "$repo_line" > "$list_file"
-else
-  if grep -Fxq "$repo_line" "$list_file"; then
-    echo "CUDA APT source already present."
-  else
-    echo "Updating existing CUDA APT source at ${list_file}..."
-    printf "%s\n" "$repo_line" > "$list_file"
-  fi
 fi
 
-echo "Updating package lists..."
-apt-get update -y
-
-echo "Done."
+echo "Done. Run 'apt-get update' before installing."
 echo
 echo "Next steps (examples, not executed):"
 echo "  • List CUDA toolkits:      apt-cache search '^cuda-toolkit-[0-9]+'"
