@@ -160,7 +160,7 @@ IndentRequiresClause: true
 IndentWidth:     2
 IndentWrappedFunctionNames: false
 InsertBraces:    false
-InsertNewlineAtEOF: false
+InsertNewlineAtEOF: true
 InsertTrailingCommas: None
 IntegerLiteralSeparator:
   Binary:          0
@@ -198,7 +198,7 @@ PenaltyBreakString: 1000
 PenaltyBreakTemplateDeclaration: 100
 PenaltyExcessCharacter: 1000000
 PenaltyIndentedWhitespace: 0
-PenaltyReturnTypeOnItsOwnLine: 10
+PenaltyReturnTypeOnItsOwnLine: 1000
 PointerAlignment: Left
 PPIndentWidth:   -1
 QualifierAlignment: Leave

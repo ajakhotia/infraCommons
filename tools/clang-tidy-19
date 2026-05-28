@@ -4,8 +4,10 @@ Checks: >-
   -altera-struct-pack-align,
   -altera-unroll-loops,
   -boost-use-ranges,
+  -cppcoreguidelines-avoid-const-or-ref-data-members,
   -fuchsia-*,
   -llvm-header-guard,
+  -llvm-include-order,
   -llvm-prefer-static-over-anonymous-namespace,
   -llvmlibc-*,
   -misc-include-cleaner,
@@ -371,7 +373,7 @@ CheckOptions:
   readability-enum-initial-value.AllowExplicitSequentialInitialValues: true
   readability-enum-initial-value.AllowExplicitZeroFirstInitialValue: true
   readability-function-cognitive-complexity.DescribeBasicIncrements: true
-  readability-function-cognitive-complexity.IgnoreMacros: false
+  readability-function-cognitive-complexity.IgnoreMacros: true
   readability-function-cognitive-complexity.Threshold: 25
   readability-function-size.BranchThreshold: none
   readability-function-size.LineThreshold: none
@@ -391,8 +393,7 @@ CheckOptions:
   readability-identifier-naming.CheckAnonFieldInParent: false
   readability-identifier-naming.ClassCase: CamelCase
   readability-identifier-naming.ConstantParameterCase: camelBack
-  readability-identifier-naming.ConstexprVariableCase: CamelCase
-  readability-identifier-naming.ConstexprVariablePrefix: k
+  readability-identifier-naming.ConstexprVariableCase: camelBack
   readability-identifier-naming.EnumCase: CamelCase
   readability-identifier-naming.FunctionCase: camelBack
   readability-identifier-naming.GetConfigPerFile: true
