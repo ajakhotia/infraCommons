@@ -419,6 +419,10 @@ CheckOptions:
   readability-identifier-naming.StructCase: CamelCase
   readability-identifier-naming.TemplateParameterCase: CamelCase
   readability-identifier-naming.TemplateParameterSuffix: ''
+
+  # Allow PascalCase template parameters with a trailing underscore (e.g. ValueType_).
+  readability-identifier-naming.TemplateParameterIgnoredRegexp: '^[A-Z][a-zA-Z0-9]*_$'
+
   readability-identifier-naming.TypeAliasCase: CamelCase
 
   # Allow STL container-style nested type names.
