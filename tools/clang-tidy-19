@@ -402,6 +402,10 @@ CheckOptions:
   readability-identifier-naming.IgnoreFailedSplit: false
   readability-identifier-naming.IgnoreMainLikeFunctions: false
   readability-identifier-naming.MethodCase: camelBack
+
+  # Allow STL container-style method names,
+  readability-identifier-naming.MethodIgnoredRegexp: '^(push_back|push_front|pop_back|pop_front|emplace_back|emplace_front|try_pop|try_push|try_emplace|shrink_to_fit|max_size|get_allocator)$'
+
   readability-identifier-naming.NamespaceCase: lower_case
   readability-identifier-naming.ParameterCase: camelBack
   readability-identifier-naming.PrivateMemberCase: CamelCase
@@ -416,6 +420,10 @@ CheckOptions:
   readability-identifier-naming.TemplateParameterCase: CamelCase
   readability-identifier-naming.TemplateParameterSuffix: ''
   readability-identifier-naming.TypeAliasCase: CamelCase
+
+  # Allow STL container-style nested type names.
+  readability-identifier-naming.TypeAliasIgnoredRegexp: '^(value_type|size_type|difference_type|allocator_type|reference|const_reference|pointer|const_pointer|iterator|const_iterator|reverse_iterator|const_reverse_iterator)$'
+
   readability-identifier-naming.TypedefCase: CamelCase
   readability-identifier-naming.VariableCase: camelBack
   readability-implicit-bool-conversion.AllowIntegerConditions: false
