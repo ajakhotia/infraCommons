@@ -1,8 +1,7 @@
 ---
 Checks: >-
   *,
-  -altera-struct-pack-align,
-  -altera-unroll-loops,
+  -altera-*,
   -boost-use-ranges,
   -cppcoreguidelines-avoid-const-or-ref-data-members,
   -fuchsia-*,
