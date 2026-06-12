@@ -43,8 +43,9 @@ function(capnproto_generate_library)
   # For build-tree targets, this property contains raw generator expressions such as
   # $<BUILD_INTERFACE:/path/to/include> and $<INSTALL_INTERFACE:include>. The latter must
   # be filtered out here: it evaluates to an empty string in the build context and would
-  # produce a spurious empty argument in the capnp compile command. BUILD_INTERFACE genexes
-  # are passed directly to add_custom_command and resolved to concrete paths at generation time.
+  # produce a spurious empty argument in the capnp compile command. BUILD_INTERFACE generative
+  # expressions are passed directly to add_custom_command and resolved to concrete paths at
+  # generation time.
   #
   # For installed targets (imported via find_package), CMake has already resolved all generator
   # expressions to concrete absolute paths when writing the export file. These paths pass
