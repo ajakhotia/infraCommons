@@ -152,7 +152,7 @@ CheckOptions:
   cppcoreguidelines-avoid-non-const-global-variables.AllowInternalLinkage: false
   cppcoreguidelines-explicit-virtual-functions.AllowOverrideAndFinal: false
   cppcoreguidelines-explicit-virtual-functions.FinalSpelling: final
-  cppcoreguidelines-explicit-virtual-functions.IgnoreDestructors: false
+  cppcoreguidelines-explicit-virtual-functions.IgnoreDestructors: true
   cppcoreguidelines-explicit-virtual-functions.IgnoreTemplateInstantiations: false
   cppcoreguidelines-explicit-virtual-functions.OverrideSpelling: override
   cppcoreguidelines-init-variables.IncludeStyle: llvm
@@ -237,7 +237,7 @@ CheckOptions:
   hicpp-use-nullptr.NullMacros: 'NULL'
   hicpp-use-override.AllowOverrideAndFinal: false
   hicpp-use-override.FinalSpelling: final
-  hicpp-use-override.IgnoreDestructors: false
+  hicpp-use-override.IgnoreDestructors: true
   hicpp-use-override.IgnoreTemplateInstantiations: false
   hicpp-use-override.OverrideSpelling: override
   llvm-else-after-return.WarnOnConditionVariables: false
@@ -319,7 +319,7 @@ CheckOptions:
   modernize-use-nullptr.NullMacros: 'NULL'
   modernize-use-override.AllowOverrideAndFinal: false
   modernize-use-override.FinalSpelling: final
-  modernize-use-override.IgnoreDestructors: false
+  modernize-use-override.IgnoreDestructors: true
   modernize-use-override.IgnoreTemplateInstantiations: false
   modernize-use-override.OverrideSpelling: override
   modernize-use-ranges.IncludeStyle: llvm
