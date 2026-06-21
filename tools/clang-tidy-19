@@ -425,7 +425,7 @@ CheckOptions:
   readability-identifier-naming.TypeAliasCase: CamelCase
 
   # Allow STL container-style nested type names.
-  readability-identifier-naming.TypeAliasIgnoredRegexp: '^(value_type|size_type|difference_type|allocator_type|reference|const_reference|pointer|const_pointer|iterator|const_iterator|reverse_iterator|const_reverse_iterator)$'
+  readability-identifier-naming.TypeAliasIgnoredRegexp: '^(value_type|element_type|size_type|difference_type|allocator_type|reference|const_reference|pointer|const_pointer|iterator|const_iterator|reverse_iterator|const_reverse_iterator)$'
 
   readability-identifier-naming.TypedefCase: CamelCase
   readability-identifier-naming.VariableCase: camelBack
