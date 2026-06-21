@@ -19,10 +19,7 @@ function(add_clang_tidy)
     message(STATUS "Found run-clang-tidy version ${ACT_PARAM_VERSION} at ${ACT_RUN_CLANG_TIDY}")
     message(STATUS "Setting up custom target '${ACT_PARAM_TARGET}' to run clang-tidy.")
 
-    # run-clang-tidy walks every translation unit in compile_commands.json, which includes generated
-    # sources under the build tree. Restrict it to files outside the binary directory via a positional
-    # regex (matched against absolute paths). Escape regex metacharacters so an unusual build path
-    # (e.g. under /tmp) cannot corrupt the pattern.
+    # The build tree must stay off-limits.
     string(REGEX REPLACE "([][.^$*+?(){}|])" "\\\\\\1" ACT_BINARY_DIR_REGEX "${CMAKE_BINARY_DIR}")
 
     add_custom_target(${ACT_PARAM_TARGET}
@@ -30,6 +27,7 @@ function(add_clang_tidy)
         ${ACT_RUN_CLANG_TIDY}
           -p ${CMAKE_BINARY_DIR}
           -clang-tidy-binary ${ACT_CLANG_TIDY}
+          -exclude-header-filter "^${ACT_BINARY_DIR_REGEX}"
           -fix
           "^(?!${ACT_BINARY_DIR_REGEX}).*"
       WORKING_DIRECTORY
