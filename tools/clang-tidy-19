@@ -148,7 +148,7 @@ CheckOptions:
   cppcoreguidelines-avoid-magic-numbers.IgnoreTypeAliases: false
   cppcoreguidelines-avoid-magic-numbers.IgnoreUserDefinedLiterals: false
   cppcoreguidelines-avoid-magic-numbers.IgnoredFloatingPointValues: '1.0;100.0;'
-  cppcoreguidelines-avoid-magic-numbers.IgnoredIntegerValues: '1;2;3;4;'
+  cppcoreguidelines-avoid-magic-numbers.IgnoredIntegerValues: '0;1;2;3;4;5;6;7;8;9;'
   cppcoreguidelines-avoid-non-const-global-variables.AllowInternalLinkage: false
   cppcoreguidelines-explicit-virtual-functions.AllowOverrideAndFinal: false
   cppcoreguidelines-explicit-virtual-functions.FinalSpelling: final
@@ -439,7 +439,7 @@ CheckOptions:
   readability-magic-numbers.IgnoreTypeAliases: false
   readability-magic-numbers.IgnoreUserDefinedLiterals: false
   readability-magic-numbers.IgnoredFloatingPointValues: '1.0;100.0;'
-  readability-magic-numbers.IgnoredIntegerValues: '1;2;3;4;'
+  readability-magic-numbers.IgnoredIntegerValues: '0;1;2;3;4;5;6;7;8;9;'
   readability-operators-representation.BinaryOperators: ''
   readability-operators-representation.OverloadedOperators: ''
   readability-qualified-auto.AddConstToQualified: true
