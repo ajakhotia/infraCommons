@@ -3,14 +3,15 @@ Checks: >-
   *,
   clang-diagnostic-*,
   -altera-*,
+  -cppcoreguidelines-avoid-const-or-ref-data-members,
   -fuchsia-*,
   -llvm-header-guard,
-  -llvmlibc-*,
+  -llvm-include-order,
   -llvm-prefer-static-over-anonymous-namespace,
-  -cppcoreguidelines-avoid-const-or-ref-data-members,
+  -llvmlibc-*,
+  -misc-include-cleaner,
   -modernize-use-trailing-return-type,
-  -portability-avoid-pragma-once,
-  -misc-include-cleaner
+  -portability-avoid-pragma-once
 
 WarningsAsErrors: '*'
 HeaderFileExtensions:
