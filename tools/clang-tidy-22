@@ -1,6 +1,11 @@
 ---
-Checks:          'clang-diagnostic-*,*'
-WarningsAsErrors: ''
+Checks: >-
+  clang-diagnostic-*,
+  *,
+  -altera-*,
+  -fuchsia-*,
+  -llvmlibc-*
+WarningsAsErrors: '*'
 HeaderFileExtensions:
   - ''
   - h
@@ -14,8 +19,7 @@ ImplementationFileExtensions:
   - cxx
 HeaderFilterRegex: '.*'
 ExcludeHeaderFilterRegex: ''
-FormatStyle:     none
-User:            ajakhotia
+FormatStyle: none
 CheckOptions:
   abseil-cleanup-ctad.IncludeStyle: llvm
   abseil-string-find-startswith.AbseilStringsMatchHeader: 'absl/strings/match.h'
@@ -558,4 +562,3 @@ CheckOptions:
   zircon-temporary-objects.Names: ''
 SystemHeaders:   false
 ...
-
