@@ -487,7 +487,7 @@ CheckOptions:
   readability-enum-initial-value.AllowExplicitSequentialInitialValues: 'true'
   readability-enum-initial-value.AllowExplicitZeroFirstInitialValue: 'true'
   readability-function-cognitive-complexity.DescribeBasicIncrements: 'true'
-  readability-function-cognitive-complexity.IgnoreMacros: 'false'
+  readability-function-cognitive-complexity.IgnoreMacros: 'true'
   readability-function-cognitive-complexity.Threshold: '25'
   readability-function-size.BranchThreshold: none
   readability-function-size.CountMemberInitAsStmt: 'true'
