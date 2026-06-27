@@ -36,7 +36,7 @@ function(add_clang_tidy)
         "Running clang-tidy with fixes in ${PROJECT_SOURCE_DIR} using clang-tidy at: ${ACT_CLANG_TIDY}"
       VERBATIM)
 
-    set(CLANG_TIDY "${ACT_CLANG_TIDY}" PARENT_SCOPE)
+    set(CLANG_TIDY "${ACT_CLANG_TIDY};--exclude-header-filter=^${ACT_BINARY_DIR_REGEX}" PARENT_SCOPE)
   else()
     if(ACT_PARAM_REQUIRED)
       message(FATAL_ERROR "Unable to find clang-tidy for version ${ACT_PARAM_VERSION}.")
