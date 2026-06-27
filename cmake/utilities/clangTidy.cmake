@@ -1,3 +1,28 @@
+include(${CMAKE_CURRENT_LIST_DIR}/collectBuildTargets.cmake)
+
+## Make every compiled target a build dependency of TIDY_TARGET, so the build graph brings the tree
+## (including generated headers) up to date before clang-tidy parses it; otherwise a missing
+## generated header breaks the AST and -fix applies invalid edits. UTILITY targets are skipped.
+##
+## Call once from the root CMakeLists.txt after all add_subdirectory calls. add_clang_tidy creates
+## no target when clang-tidy is missing, so guard on it: if(TARGET clangTidy) ... endif().
+function(add_clang_tidy_build_dependencies TIDY_TARGET)
+  collect_build_targets(ACT_ALL_TARGETS "${CMAKE_SOURCE_DIR}")
+
+  foreach(ACT_TARGET IN LISTS ACT_ALL_TARGETS)
+    if(ACT_TARGET STREQUAL TIDY_TARGET)
+      continue()
+    endif()
+
+    get_target_property(ACT_TARGET_TYPE ${ACT_TARGET} TYPE)
+    if(ACT_TARGET_TYPE STREQUAL "UTILITY")
+      continue()
+    endif()
+
+    add_dependencies(${TIDY_TARGET} ${ACT_TARGET})
+  endforeach()
+endfunction()
+
 function(add_clang_tidy)
   set(OPTIONS_ARGUMENTS REQUIRED)
   set(SINGLE_VALUE_ARGUMENTS TARGET VERSION)
@@ -36,7 +61,7 @@ function(add_clang_tidy)
         "Running clang-tidy with fixes in ${PROJECT_SOURCE_DIR} using clang-tidy at: ${ACT_CLANG_TIDY}"
       VERBATIM)
 
-    set(CLANG_TIDY "${ACT_CLANG_TIDY}" PARENT_SCOPE)
+    set(CLANG_TIDY "${ACT_CLANG_TIDY};--exclude-header-filter=^${ACT_BINARY_DIR_REGEX}" PARENT_SCOPE)
   else()
     if(ACT_PARAM_REQUIRED)
       message(FATAL_ERROR "Unable to find clang-tidy for version ${ACT_PARAM_VERSION}.")
