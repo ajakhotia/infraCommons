@@ -1,0 +1,100 @@
+name: wait-for-workflow
+
+description: |
+  Waits for another workflow's run on the same commit to complete. Succeeds immediately when no
+  run of the target workflow exists for the commit (i.e. its trigger filters did not match the
+  event). This sequences workflows that share a trigger without duplicating their path filters:
+  GitHub creates run records for all matching workflows at event-dispatch time, so an absent run
+  reliably means the workflow was not triggered.
+
+inputs:
+  workflow:
+    required: true
+    description: "File name of the workflow to wait for (e.g. 'dev-base-image.yaml')."
+
+  sha:
+    required: false
+    description: "Commit SHA to match runs against. Defaults to the head SHA of the triggering event."
+    default: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+  token:
+    required: false
+    description: "GitHub token used to query the Actions API."
+    default: ${{ github.token }}
+
+  poll-interval-seconds:
+    required: false
+    description: "Seconds between polls of the target run's status."
+    default: "30"
+
+  timeout-seconds:
+    required: false
+    description: "Maximum seconds to wait for the target run to complete before failing."
+    default: "3600"
+
+outputs:
+  succeeded:
+    description: |
+      "true" when a run of the target workflow completed successfully for the commit, i.e. its
+      artifacts (images, packages) exist for this SHA. "false" when no run was triggered or the
+      run was skipped. Failed runs fail this action instead of setting an output.
+    value: ${{ steps.wait.outputs.succeeded }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: wait
+      id: wait
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        REPOSITORY: ${{ github.repository }}
+        WORKFLOW: ${{ inputs.workflow }}
+        SHA: ${{ inputs.sha }}
+        POLL_INTERVAL: ${{ inputs.poll-interval-seconds }}
+        TIMEOUT: ${{ inputs.timeout-seconds }}
+      run: |
+        set -euo pipefail
+
+        deadline=$(( SECONDS + TIMEOUT ))
+
+        while true; do
+          run="$(gh api                                                                           \
+              "repos/${REPOSITORY}/actions/workflows/${WORKFLOW}/runs?head_sha=${SHA}&per_page=1" \
+              --jq '.workflow_runs[0] // empty')"
+
+          if [ -z "${run}" ]; then
+            echo "No '${WORKFLOW}' run exists for ${SHA} - nothing to wait for."
+            echo "succeeded=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          status="$(jq -r '.status' <<< "${run}")"
+
+          if [ "${status}" = "completed" ]; then
+            conclusion="$(jq -r '.conclusion' <<< "${run}")"
+            echo "'${WORKFLOW}' run for ${SHA} concluded '${conclusion}'."
+
+            case "${conclusion}" in
+              success)
+                echo "succeeded=true" >> "${GITHUB_OUTPUT}"
+                exit 0
+                ;;
+              skipped)
+                echo "succeeded=false" >> "${GITHUB_OUTPUT}"
+                exit 0
+                ;;
+              *)
+                exit 1
+                ;;
+            esac
+          fi
+
+          if [ "${SECONDS}" -ge "${deadline}" ]; then
+            echo "Timed out after ${TIMEOUT}s waiting for '${WORKFLOW}' run for ${SHA}."
+            exit 1
+          fi
+
+          echo "'${WORKFLOW}' run for ${SHA} is '${status}' - waiting ${POLL_INTERVAL}s."
+          sleep "${POLL_INTERVAL}"
+        done

@@ -160,7 +160,7 @@ cmake -B build -DCMAKE_TOOLCHAIN_FILE=external/infraCommons/cmake/toolchains/lin
 ```
 
 Real-world usage:
-[nioc/docker/ubuntu.dockerfile](https://github.com/ajakhotia/nioc/blob/main/docker/ubuntu.dockerfile#L86)
+[nioc/docker/ubuntuNioc.dockerfile](https://github.com/ajakhotia/nioc/blob/main/docker/ubuntuNioc.dockerfile#L15-L26)
 
 ---
 
@@ -375,7 +375,7 @@ sh tools/extractDependencies.sh Compilers systemDependencies.json
 ```
 
 Real-world usage:
-[nioc/docker/ubuntu.dockerfile](https://github.com/ajakhotia/nioc/blob/main/docker/ubuntu.dockerfile#L44-L48)
+[nioc/docker/ubuntuDevBase.dockerfile](https://github.com/ajakhotia/nioc/blob/main/docker/ubuntuDevBase.dockerfile#L64-L69)
 
 ### 🔩 installCMake.sh
 
@@ -480,6 +480,23 @@ Each component is normalised automatically.
 
 Real-world usage:
 [nioc/.github/workflows/docker-image.yaml](https://github.com/ajakhotia/nioc/blob/main/.github/workflows/docker-image.yaml#L40)
+
+### ⏳ wait-for-workflow
+
+Waits for another workflow's run on the same commit to complete, and succeeds immediately when no
+run exists (i.e. the target workflow's trigger filters did not match the event). Sequences
+workflows that share a trigger without duplicating their path filters.
+
+```yaml
+- name: wait-for-dev-base-image
+  uses: ajakhotia/infraCommons/.github/actions/wait-for-workflow@main
+  with:
+    workflow: dev-base-image.yaml
+    # sha defaults to the head SHA of the triggering event, token to github.token
+```
+
+Real-world usage:
+[nioc/.github/workflows/docker-image.yaml](https://github.com/ajakhotia/nioc/blob/main/.github/workflows/docker-image.yaml)
 
 ### 🔄 docker-pull-retag-push
 
