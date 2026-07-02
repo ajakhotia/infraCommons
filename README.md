@@ -160,7 +160,7 @@ cmake -B build -DCMAKE_TOOLCHAIN_FILE=external/infraCommons/cmake/toolchains/lin
 ```
 
 Real-world usage:
-[nioc/docker/ubuntu.dockerfile](https://github.com/ajakhotia/nioc/blob/main/docker/ubuntu.dockerfile#L86)
+[nioc/docker/ubuntuDevBase.dockerfile](https://github.com/ajakhotia/nioc/blob/main/docker/ubuntuDevBase.dockerfile#L82-L94)
 
 ---
 
@@ -375,7 +375,7 @@ sh tools/extractDependencies.sh Compilers systemDependencies.json
 ```
 
 Real-world usage:
-[nioc/docker/ubuntu.dockerfile](https://github.com/ajakhotia/nioc/blob/main/docker/ubuntu.dockerfile#L44-L48)
+[nioc/docker/ubuntuDevBase.dockerfile](https://github.com/ajakhotia/nioc/blob/main/docker/ubuntuDevBase.dockerfile#L64-L69)
 
 ### 🔩 installCMake.sh
 
