@@ -160,7 +160,7 @@ cmake -B build -DCMAKE_TOOLCHAIN_FILE=external/infraCommons/cmake/toolchains/lin
 ```
 
 Real-world usage:
-[nioc/docker/ubuntuDevBase.dockerfile](https://github.com/ajakhotia/nioc/blob/main/docker/ubuntuDevBase.dockerfile#L82-L94)
+[nioc/docker/ubuntuNioc.dockerfile](https://github.com/ajakhotia/nioc/blob/main/docker/ubuntuNioc.dockerfile#L15-L26)
 
 ---
 
