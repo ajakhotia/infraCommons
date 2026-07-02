@@ -32,6 +32,14 @@ inputs:
     description: "Maximum seconds to wait for the target run to complete before failing."
     default: "3600"
 
+outputs:
+  succeeded:
+    description: |
+      "true" when a run of the target workflow completed successfully for the commit, i.e. its
+      artifacts (images, packages) exist for this SHA. "false" when no run was triggered or the
+      run was skipped. Failed runs fail this action instead of setting an output.
+    value: ${{ steps.wait.outputs.succeeded }}
+
 runs:
   using: "composite"
   steps:
@@ -57,6 +65,7 @@ runs:
 
           if [ -z "${run}" ]; then
             echo "No '${WORKFLOW}' run exists for ${SHA} - nothing to wait for."
+            echo "succeeded=false" >> "${GITHUB_OUTPUT}"
             exit 0
           fi
 
@@ -67,7 +76,12 @@ runs:
             echo "'${WORKFLOW}' run for ${SHA} concluded '${conclusion}'."
 
             case "${conclusion}" in
-              success|skipped)
+              success)
+                echo "succeeded=true" >> "${GITHUB_OUTPUT}"
+                exit 0
+                ;;
+              skipped)
+                echo "succeeded=false" >> "${GITHUB_OUTPUT}"
                 exit 0
                 ;;
               *)
