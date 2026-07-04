@@ -1,253 +1,302 @@
-# 🧰 infraCommons
+<h1 align="center">🧰 infraCommons</h1>
 
-Shared build infrastructure for C++ projects. Drop it in as a submodule and get reproducible
-toolchains, CI workflows, code-quality configs, and CMake helpers — all managed in one place.
+<p align="center">
+  <strong>Shared build infrastructure for C++ projects, vendored as one submodule<br/>
+  pinned toolchains&nbsp;&nbsp;·&nbsp;&nbsp;one-call CMake targets&nbsp;&nbsp;·&nbsp;&nbsp;CI-tested GitHub Actions</strong>
+</p>
 
----
+<p align="center">
+  <a href="https://github.com/ajakhotia/infraCommons/actions/workflows/docker-snapshot-weekly.yaml"><img src="https://github.com/ajakhotia/infraCommons/actions/workflows/docker-snapshot-weekly.yaml/badge.svg" alt="docker-snapshot-weekly"/></a>
+  <a href="https://github.com/ajakhotia/infraCommons/actions/workflows/docker-snapshot-monthly.yaml"><img src="https://github.com/ajakhotia/infraCommons/actions/workflows/docker-snapshot-monthly.yaml/badge.svg" alt="docker-snapshot-monthly"/></a>
+  <img src="https://img.shields.io/badge/toolchain-Clang%2021%2F22%20%7C%20GCC%2014%2F15-informational" alt="Toolchains"/>
+  <img src="https://img.shields.io/badge/platform-Ubuntu%2022.04%20%7C%2024.04-E95420?logo=ubuntu&logoColor=white" alt="Platform"/>
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT"/>
+</p>
 
-## 🗂️ What's Inside
+Every C++ project begins with the same unglamorous week: pick compiler versions and write
+toolchain files, wire up clang-format and clang-tidy, get install/export rules right so
+`find_package` works downstream, script the CI images, and cache Docker layers so builds don't
+take an hour. None of that work differentiates your project, and once copy-pasted between
+repos, all of it drifts.
 
-### 📌 Pinned Docker Image Snapshots
+***infraCommons*** is that layer, built once and shared. Vendor it as a git submodule and your
+project starts on day one with a pinned toolchain, project-wide format and lint targets, exported
+CMake packages, reproducible provisioning, and Docker-centric CI actions. When infraCommons
+improves, every consumer picks up the improvement with a plain
+`git submodule update`. Nothing is copy-pasted, so nothing drifts.
 
-- Weekly and monthly snapshots of popular OS images, cached at
-  `ghcr.io/ajakhotia/infracommons/<cadence>/<image>`. [See details and how to request additions.](#-pinned-docker-image-snapshots-1)
+**With one submodule, your build runs a pinned compiler, your formatter and linter are build
+targets, your libraries install as `find_package`-able packages, and your CI builds cached,
+multi-stage Docker images.**
 
-### 🔧 CMake Toolchain Files
+What's inside:
 
-- Pre-configured compiler toolchains for GCC and Clang on Linux, with CUDA support baked in.
-- Version-pinned variants for repeatable builds, plus auto-detecting defaults that upgrade
-  gracefully when the system compiler is too old.
+- 🔧 **[CMake toolchains](#-cmake-toolchains)**: version-pinned Clang and GCC toolchain files
+  with CUDA wired in when present.
+- 🏗️ **[CMake helpers](#%EF%B8%8F-cmake-helpers)**: declare an exported, installable library in
+  one call; generate Cap'n Proto sources in the build graph; format and lint the whole tree as
+  build targets.
+- 🧼 **[Code-quality configs](#-code-quality-configs)**: curated `clang-format`, `clang-tidy`,
+  and `shfmt` configurations, consumed by symlink so every project stays on the same settings.
+- 🛠️ **[Provisioning scripts](#%EF%B8%8F-toolchain-provisioning-scripts)**: APT sources for GNU,
+  LLVM, and CUDA; JSON-driven system-dependency install; a pinned CMake installer.
+- ♻️ **[Reusable GitHub Actions](#%EF%B8%8F-reusable-github-actions)**: seven composite actions
+  for Docker-centric CI pipelines, each guarded by its own test workflow.
+- 📌 **[Pinned Docker image snapshots](#-pinned-docker-image-snapshots)**: weekly and monthly
+  Ubuntu snapshots for `FROM` lines that don't churn your layer cache.
 
-### 🏗️ CMake Helpers
-
-- `exportedTargets.cmake` — Declare a library or executable target with sources, headers, flags, and
-  install rules all in one place. No more scattered `target_*` calls.
-  ([example](https://github.com/ajakhotia/nioc/blob/main/modules/geometry/CMakeLists.txt))
-- `capnprotoGenerate.cmake` — Cap'n Proto code generation wired into the CMake build graph.
-  ([example](https://github.com/ajakhotia/nioc/blob/main/modules/geometry/CMakeLists.txt))
-- `requireArguments.cmake` — Validates required arguments parsed by `cmake_parse_arguments`.
-  ([example](cmake/utilities/clangTidy.cmake))
-- `clangFormat.cmake` — Sets up a build target to run clangformat across all source files.
-  ([example](https://github.com/ajakhotia/nioc/blob/main/CMakeLists.txt#L23-L35))
-- `clangTidy.cmake` — Sets up the static analyser. Creates a custom target for project-wide auto fix
-  and provides variables so clang-tidy can be enabled on a per-target basis.
-  ([example](https://github.com/ajakhotia/nioc/blob/main/CMakeLists.txt#L23-L35))
-
-### 🧼 Code Quality Configs
-
-- Provides `clang-format`, `clang-tidy`, and `shfmt` configs for multiple versions of each tool.
-  Projects symlink the appropriate version to their root to benefit from a curated configuration.
-  ([.clang-format](https://github.com/ajakhotia/nioc/blob/main/.clang-format),
-  [.clang-tidy](https://github.com/ajakhotia/nioc/blob/main/.clang-tidy),
-  [.editorconfig](https://github.com/ajakhotia/nioc/blob/main/.editorconfig))
-
-### 🛠️ Toolchain Provisioning Scripts
-
-- APT source setup for GNU, LLVM/Clang, and NVIDIA CUDA toolchains.
-- JSON-driven system dependency extraction for reproducible `apt-get install` steps.
-- CMake installer to download and install CMake of a specific version.
-
-### ♻️ Reusable GitHub Actions
-
-- `docker-typical-build-push` — Multi-arch Docker builds with automatic tagging and layer caching.
-- `cmake-find-package` — Validates library discoverability inside a published Docker image.
-- `normalize` — Sanitises arbitrary strings into Docker-safe image tags.
-- `oci-compliant-image-name` — Constructs fully qualified OCI image names.
-- `docker-pull-retag-push` — Pulls upstream images and re-publishes them to your registry.
+[nioc](https://github.com/ajakhotia/nioc) is a complete, production-shaped consumer: its
+toolchains, format/tidy targets, exported packages, and its entire CI pipeline come from
+infraCommons. Most sections below link to the exact lines in nioc that use them.
 
 ---
 
-## 🚀 Getting Started
+## 🔧 CMake Toolchains
 
-infraCommons is consumed as a **git submodule**. Add it to your project once, then pull in
-improvements over time with standard submodule commands.
+A compiler picked up from `$PATH` is a moving target: builds pass on one machine and break on the
+next, and "works in CI" stops meaning anything. Each toolchain file in
+[`cmake/toolchains`](cmake/toolchains) pins the exact C, C++, and Fortran compiler binaries for
+one compiler family and version:
 
-```bash
-git submodule add https://github.com/ajakhotia/infraCommons.git external/infraCommons
-git submodule update --init
-```
+- `linux-clang-21.cmake` / `linux-clang-22.cmake`: Clang, with the matching LLVM library
+  directory on the linker path and rpath so the right runtime is found at build *and* run time.
+- `linux-gnu-14.cmake` / `linux-gnu-15.cmake`: GCC.
 
-The [nioc](https://github.com/ajakhotia/nioc) project is the best reference for how to wire
-everything up. Here is what that integration looks like:
+Every file also probes for CUDA (`CUDA_HOME`, `CUDA_PATH`, then `/usr/local/cuda`). When `nvcc`
+is present, it is configured as the CUDA compiler with pinned GPU architectures and the
+toolchain's own C++ compiler as the host compiler; when absent, the toolchain works as a plain
+CPU toolchain. Same file either way.
 
-**Include CMake utilities** in your root `CMakeLists.txt`:
-
-> Replace `<myProject>` with your project name.
-
-```cmake
-if(PROJECT_IS_TOP_LEVEL)
-  include(external/infraCommons/cmake/utilities/capnprotoGenerate.cmake)
-  include(external/infraCommons/cmake/utilities/clangFormat.cmake)
-  include(external/infraCommons/cmake/utilities/clangTidy.cmake)
-  include(external/infraCommons/cmake/utilities/exportedTargets.cmake)
-  include(external/infraCommons/cmake/utilities/requireArguments.cmake)
-
-  add_clang_format(TARGET <myProject>ClangFormat VERSION 19)
-  add_clang_tidy(TARGET <myProject>ClangTidy VERSION 19)
-endif()
-```
-
-**Reference toolchain files** during CMake configuration:
-
-```bash
-cmake -B build -DCMAKE_TOOLCHAIN_FILE=external/infraCommons/cmake/toolchains/linux-clang-default.cmake
-```
-
-**Symlink code quality configs** from your repository root:
-
-```bash
-ln -s external/infraCommons/tools/clang-format-19 .clang-format
-ln -s external/infraCommons/tools/clang-tidy-19 .clang-tidy
-ln -s external/infraCommons/tools/shfmt-3.8-editorconfig .editorconfig
-```
-
-**Reference reusable GitHub Actions** in your workflows
-([example](https://github.com/ajakhotia/nioc/blob/main/.github/workflows/docker-image.yaml)):
-
-```yaml
-- uses: ajakhotia/infraCommons/.github/actions/docker-typical-build-push@main
-```
-
----
-
-# 📖 Details
-
-## 📌 Pinned Docker Image Snapshots
-
-Upstream Docker images (e.g. `ubuntu:24.04`) mutate too often — frequent upstream changes lead to
-cache misses that trigger full rebuilds for no particular benefit. infraCommons runs scheduled
-workflows that pull popular OS images and re-publish them to
-`ghcr.io/ajakhotia/infracommons/` on a fixed cadence:
-
-```
-ghcr.io/ajakhotia/infracommons/<cadence>/<image>:<tag>
-```
-
-| Cadence   | Schedule                             |
-|-----------|--------------------------------------|
-| `weekly`  | Every Sunday at 00:00 UTC            |
-| `monthly` | First day of each month at 00:00 UTC |
-
-Use a monthly snapshot as the base image in your Dockerfile to get a stable, reproducible starting
-point that still receives periodic updates. Browse
-[`cmake/toolchains/`](cmake/toolchains) and the
-[snapshot workflows](.github/workflows) for the current list of images and cadences.
-
-Want an image or cadence added? Open an
-[issue](https://github.com/ajakhotia/infraCommons/issues) or send a PR updating the workflow matrix.
-
----
-
-## 🔧 CMake Toolchain Files
-
-Pre-configured toolchain files that set the C, C++, Fortran, and CUDA compilers along with the
-necessary linker flags. Pass one to CMake via `-DCMAKE_TOOLCHAIN_FILE` or through a preset.
-
-Two flavours are provided for each supported compiler family:
-
-- **Default / auto-detecting** — uses the system compiler when it meets the minimum version
-  requirement, and transparently upgrades to a known-good suffixed binary (e.g. `gcc-13`) when it
-  doesn't.
-- **Version-pinned** — hardcodes a specific compiler version and its associated runtime library
-  paths. Ideal for CI and release builds where exact reproducibility matters.
-
-All toolchain files also configure CUDA via `nvcc` with pinned GPU architectures.
-
-Browse [`cmake/toolchains`](cmake/toolchains) for the full set of available toolchains.
-
-```bash
-cmake -B build -DCMAKE_TOOLCHAIN_FILE=external/infraCommons/cmake/toolchains/linux-clang-default.cmake
+```shell
+cmake -G Ninja -S . -B build \
+  --toolchain external/infraCommons/cmake/toolchains/linux-clang-22.cmake
 ```
 
 Real-world usage:
-[nioc/docker/ubuntuNioc.dockerfile](https://github.com/ajakhotia/nioc/blob/main/docker/ubuntuNioc.dockerfile#L15-L26)
+[nioc/docker/ubuntuNioc.dockerfile](https://github.com/ajakhotia/nioc/blob/main/docker/ubuntuNioc.dockerfile)
 
 ---
 
 ## 🏗️ CMake Helpers
 
-### 📦 exportedTargets.cmake
+Focused utilities under [`cmake/utilities`](cmake/utilities). Include the ones you need once
+from the project-root `CMakeLists.txt` (see
+[Using infraCommons in your project](#-using-infracommons-in-your-project)); the functions are
+then available in every directory below.
 
-[cmake/utilities/exportedTargets.cmake](cmake/utilities/exportedTargets.cmake)
+### 📦 Exported Targets
 
-Helpers for exporting and installing CMake targets in a consistent way. Encourages predictable
-namespace usage and proper install/export rules for libraries and headers.
-
-```cmake
-include(external/infraCommons/cmake/utilities/exportedTargets.cmake)
-
-find_package(Boost CONFIG REQUIRED COMPONENTS headers)
-
-add_exported_library(
-  TARGET
-  exampleLibrary
-  TYPE
-  INTERFACE
-  NAMESPACE
-  ExampleNamespace::
-  EXPORT
-  ExampleTargetSet
-  SOURCES
-  ""
-  HEADERS
-  INTERFACE include/example/core/foo.hpp
-  INTERFACE include/example/core/bar.hpp
-  INCLUDE_DIRECTORIES
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-  LINK_LIBRARIES
-  INTERFACE Boost::headers
-  COMPILE_FEATURES
-  INTERFACE cxx_std_20
-  COMPILE_OPTIONS
-  ""
-  COMPILE_DEFINITIONS
-  ""
-)
-```
-
-Real-world usage:
-[nioc/modules/geometry/CMakeLists.txt](https://github.com/ajakhotia/nioc/blob/main/modules/geometry/CMakeLists.txt)
-
-### 🧬 capnprotoGenerate.cmake
-
+[cmake/utilities/exportedTargets.cmake](cmake/utilities/exportedTargets.cmake) ·
 [cmake/utilities/capnprotoGenerate.cmake](cmake/utilities/capnprotoGenerate.cmake)
 
-Thin wrapper around Cap'n Proto code generation. Generates C++ sources from `.capnp` schemas and
-wires them into the CMake build graph with the correct dependencies.
+Making a library properly consumable (namespaced alias, `BUILD_INTERFACE` /
+`INSTALL_INTERFACE` include paths, header installation, export sets) takes a dozen scattered
+`target_*` and `install()` calls, and forgetting any one of them surfaces as a downstream
+`find_package` failure. `add_exported_library` and `add_exported_executable` collapse all of it
+into one declaration.
+
+`capnproto_generate_library` extends the same idea to Cap'n Proto: it runs `capnp` at build time
+with correct dependencies (edit a schema, rebuild, done), compiles the generated sources, links
+the Cap'n Proto runtime, and hands the result to `add_exported_library`, so a schema library
+exports and installs exactly like a hand-written one. Schemas can import each other across
+libraries, too: the include directories of everything in `LINK_LIBRARIES` become `--import-path`
+flags, so schema libraries compose just like ordinary targets.
+
+<table>
+<tr>
+<th align="left">add_exported_library</th>
+<th align="left">add_exported_executable</th>
+<th align="left">capnproto_generate_library</th>
+</tr>
+<tr>
+<td>
 
 ```cmake
-include(external/infraCommons/cmake/utilities/capnprotoGenerate.cmake)
-
-capnproto_generate_library(
+add_exported_library(
   TARGET
-  exampleMessagesIdl
+    exampleLibrary
+  TYPE
+    INTERFACE
   NAMESPACE
-  ExampleNamespace::
+    ExampleNamespace::
   EXPORT
-  ExampleTargetSet
-  SCHEMA_FILES
-  include/example/messages/idl/message_a.capnp
-  include/example/messages/idl/message_b.capnp
+    ExampleTargetSet
+  SOURCES
+    ""
+  HEADERS
+    INTERFACE include/example/foo.hpp
+    INTERFACE include/example/bar.hpp
+  INCLUDE_DIRECTORIES
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+  LINK_LIBRARIES
+    INTERFACE Boost::headers
   COMPILE_FEATURES
-  PUBLIC cxx_std_20
+    INTERFACE cxx_std_20
   COMPILE_OPTIONS
-  PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -pedantic -Werror -Wno-unknown-pragmas>
-  PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -pedantic -Werror -Wno-unknown-pragmas>
-  PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+    ""
   COMPILE_DEFINITIONS
-  ""
+    ""
 )
 ```
 
+</td>
+<td>
+
+```cmake
+add_exported_executable(
+  TARGET
+    exampleTool
+  NAMESPACE
+    ExampleNamespace::
+  EXPORT
+    ExampleTargetSet
+  SOURCES
+    src/exampleToolMain.cpp
+  HEADERS
+    include/example/foo.hpp
+  INCLUDE_DIRECTORIES
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+  LINK_LIBRARIES
+    ExampleNamespace::exampleLibrary
+  COMPILE_FEATURES
+    cxx_std_20
+  COMPILE_OPTIONS
+    ""
+  COMPILE_DEFINITIONS
+    ""
+)
+
+
+
+```
+
+</td>
+<td>
+
+```cmake
+capnproto_generate_library(
+  TARGET
+    exampleMessagesIdl
+  NAMESPACE
+    ExampleNamespace::
+  EXPORT
+    ExampleTargetSet
+  SCHEMA_FILES
+    include/example/idl/message_a.capnp
+    include/example/idl/message_b.capnp
+  COMPILE_FEATURES
+    PUBLIC cxx_std_20
+  COMPILE_OPTIONS
+    ""
+  COMPILE_DEFINITIONS
+    ""
+)
+
+
+
+
+
+
+
+
+```
+
+</td>
+</tr>
+</table>
+
+Every target builds in-tree under its namespace (`ExampleNamespace::exampleLibrary`,
+`ExampleNamespace::exampleTool`, `ExampleNamespace::exampleMessagesIdl`) and installs with the
+same name for `find_package` consumers. Leave `TYPE` empty for compiled libraries so the person
+configuring the build chooses static or shared with `-DBUILD_SHARED_LIBS`; the helper warns if
+you hardcode it. `add_exported_executable` takes its values without visibility keywords. Nothing
+consumes an executable's usage requirements, so the helper applies everything `PRIVATE`.
+
 Real-world usage:
 [nioc/modules/geometry/CMakeLists.txt](https://github.com/ajakhotia/nioc/blob/main/modules/geometry/CMakeLists.txt)
+
+### 🎨 clangFormat.cmake
+
+[cmake/utilities/clangFormat.cmake](cmake/utilities/clangFormat.cmake)
+
+`add_clang_format` creates a build target that formats every C/C++ source in the project with a
+pinned clang-format version, so "run the formatter" is the same command on every machine and in
+CI. Pass `REQUIRED` to fail configuration when the tool is missing; without it the target is
+skipped quietly.
+
+```cmake
+include(external/infraCommons/cmake/utilities/clangFormat.cmake)
+add_clang_format(TARGET clangFormat VERSION 22)
+```
+
+```shell
+cmake --build build --target clangFormat
+```
+
+Real-world usage:
+[nioc/CMakeLists.txt](https://github.com/ajakhotia/nioc/blob/main/CMakeLists.txt)
+
+### 🧹 clangTidy.cmake
+
+[cmake/utilities/clangTidy.cmake](cmake/utilities/clangTidy.cmake)
+
+`add_clang_tidy` sets up static analysis two complementary ways, both pinned to an exact
+clang-tidy version and both excluding generated headers under the build tree:
+
+- A custom target that runs `run-clang-tidy -fix` over the whole compile database, giving a
+  project-wide sweep.
+- A `CLANG_TIDY` variable ready to drop into a target's `CXX_CLANG_TIDY` property, so analysis
+  runs *during* compilation and the build itself is the lint gate.
+
+```cmake
+include(external/infraCommons/cmake/utilities/clangTidy.cmake)
+add_clang_tidy(TARGET clangTidy VERSION 22 REQUIRED)
+
+if(CLANG_TIDY)
+  set_target_properties(exampleLibrary PROPERTIES CXX_CLANG_TIDY ${CLANG_TIDY})
+endif()
+```
+
+The sweep target has a classic failure mode: if generated headers don't exist yet, clang-tidy
+parses a broken AST and `-fix` applies invalid edits. `add_clang_tidy_build_dependencies` closes
+that hole by making every compiled target a build dependency of the tidy target. Call it once
+from the root `CMakeLists.txt` after all `add_subdirectory` calls:
+
+```cmake
+if(TARGET clangTidy)
+  add_clang_tidy_build_dependencies(clangTidy)
+endif()
+```
+
+Real-world usage:
+[nioc/CMakeLists.txt](https://github.com/ajakhotia/nioc/blob/main/CMakeLists.txt)
+
+### 🗂️ collectBuildTargets.cmake
+
+[cmake/utilities/collectBuildTargets.cmake](cmake/utilities/collectBuildTargets.cmake)
+
+CMake's `BUILDSYSTEM_TARGETS` property is per-directory, so a single query silently misses every
+target defined under `add_subdirectory`. `collect_build_targets` recurses the directory tree and
+returns every target the build actually creates. It is the primitive behind
+`add_clang_tidy_build_dependencies`, and it is useful anywhere you need to apply a property or
+dependency project-wide.
+
+```cmake
+include(external/infraCommons/cmake/utilities/collectBuildTargets.cmake)
+
+collect_build_targets(ALL_TARGETS "${CMAKE_SOURCE_DIR}")
+foreach(TARGET IN LISTS ALL_TARGETS)
+  # ...
+endforeach()
+```
 
 ### ✅ requireArguments.cmake
 
 [cmake/utilities/requireArguments.cmake](cmake/utilities/requireArguments.cmake)
 
-Validates required arguments parsed by `cmake_parse_arguments` inside CMake functions. Emits a
-`FATAL_ERROR` (attributed to the calling function) listing any missing or empty arguments.
+Validates arguments parsed with `cmake_parse_arguments`, emitting a `FATAL_ERROR` attributed to
+the calling function that lists every missing or empty argument, instead of the cryptic failure
+you get three lines later when an empty variable is used.
 
 ```cmake
 include(external/infraCommons/cmake/utilities/requireArguments.cmake)
@@ -261,64 +310,26 @@ endfunction()
 
 Real-world usage: [clangTidy.cmake](cmake/utilities/clangTidy.cmake)
 
-### 🎨 clangFormat.cmake
-
-[cmake/utilities/clangFormat.cmake](cmake/utilities/clangFormat.cmake)
-
-Adds a custom target that runs clangformat over all source files in the project.
-
-```cmake
-include(external/infraCommons/cmake/utilities/clangFormat.cmake)
-add_clang_format(TARGET myProjectClangFormat VERSION 19)
-```
-
-Real-world usage:
-[nioc/CMakeLists.txt](https://github.com/ajakhotia/nioc/blob/main/CMakeLists.txt#L30)
-
-### 🧹 clangTidy.cmake
-
-[cmake/utilities/clangTidy.cmake](cmake/utilities/clangTidy.cmake)
-
-Sets up clang-tidy for static analysis. Creates a custom target that runs `run-clang-tidy`
-(with `-fix`) across the whole compile-database. Pass `REQUIRED` to fail configuration when the
-requested version is missing.
-
-```cmake
-include(external/infraCommons/cmake/utilities/clangTidy.cmake)
-add_clang_tidy(TARGET myProjectClangTidy VERSION 19 REQUIRED)
-```
-
-When clang-tidy is found, the helper exports a `CLANG_TIDY` variable. Set it as the
-`CXX_CLANG_TIDY` property on a target for running checks during builds:
-
-```cmake
-if(CLANG_TIDY)
-  set_target_properties(exampleLibrary PROPERTIES CXX_CLANG_TIDY ${CLANG_TIDY})
-endif()
-```
-
-Real-world usage:
-[nioc/CMakeLists.txt](https://github.com/ajakhotia/nioc/blob/main/CMakeLists.txt#L31)
-
 ---
 
 ## 🧼 Code Quality Configs
 
-Bundled configuration files for `clang-format`, `clang-tidy`, and `shfmt` are available. Consume
-them by symlinking from your repository root to the desired config in the submodule. Every consumer
-stays pinned to the same canonical configuration with zero copy/paste drift.
+A formatter config that lives in each repo is a formatter config that diverges. infraCommons
+keeps one curated configuration per tool per version under [`tools`](tools):
+`clang-format-19` / `clang-format-22`, `clang-tidy-19` / `clang-tidy-22`, and
+`shfmt-3.8-editorconfig`. Every project consumes them by symlink:
 
 ```bash
-# From your repository root (assuming infraCommons is at external/infraCommons)
-ln -s external/infraCommons/tools/<clang-format-config> .clang-format
-ln -s external/infraCommons/tools/<clang-tidy-config>   .clang-tidy
-ln -s external/infraCommons/tools/<shfmt-editorconfig>  .editorconfig
+# From your repository root (assuming infraCommons is at external/infraCommons):
+ln -s external/infraCommons/tools/clang-format-22        .clang-format
+ln -s external/infraCommons/tools/clang-tidy-22          .clang-tidy
+ln -s external/infraCommons/tools/shfmt-3.8-editorconfig .editorconfig
 ```
 
-Once linked, `clang-format`, `clang-tidy` (including invocations driven by `clangFormat.cmake` and
-`clangTidy.cmake`), and `shfmt` will all pick up the pinned settings automatically.
-
-Browse [`tools`](tools) for available config versions.
+Once linked, `clang-format`, `clang-tidy` (including the `clangFormat.cmake` / `clangTidy.cmake`
+targets above), IDEs, and `shfmt` all pick up the pinned settings automatically. Upgrading a tool
+version across all your projects is re-pointing a symlink; refining a check in one place refines
+it everywhere.
 
 Real-world usage:
 [nioc/.clang-format](https://github.com/ajakhotia/nioc/blob/main/.clang-format),
@@ -329,27 +340,32 @@ Real-world usage:
 
 ## 🛠️ Toolchain Provisioning Scripts
 
+The toolchain files above assume the compilers exist; these scripts make that true, the same
+way on a laptop, in a Dockerfile, and on a CI runner.
+
 ### 📡 APT Repository Setup
 
-Scripts to register upstream APT sources for common compiler toolchains. Ensures reproducible
-provisioning across CI and local environments.
+Register the upstream APT sources for modern toolchains, with proper `signed-by` keyrings. Each
+script prompts before touching the system; pass `-y` for non-interactive use.
 
-| Script                                                           | Purpose                                             |
-|------------------------------------------------------------------|-----------------------------------------------------|
-| [`tools/apt/addGNUSources.sh`](tools/apt/addGNUSources.sh)       | Registers upstream GCC/GNU toolchain repositories.  |
-| [`tools/apt/addLLVMSources.sh`](tools/apt/addLLVMSources.sh)     | Registers `apt.llvm.org` for LLVM/Clang toolchains. |
-| [`tools/apt/addNvidiaSources.sh`](tools/apt/addNvidiaSources.sh) | Registers the NVIDIA CUDA APT repository.           |
+| Script                                                           | Purpose                                                                        |
+|------------------------------------------------------------------|--------------------------------------------------------------------------------|
+| [`tools/apt/addGNUSources.sh`](tools/apt/addGNUSources.sh)       | Registers upstream GCC/GNU toolchain repositories.                             |
+| [`tools/apt/addLLVMSources.sh`](tools/apt/addLLVMSources.sh)     | Registers `apt.llvm.org`, probing for the suites that exist for your release.  |
+| [`tools/apt/addNvidiaSources.sh`](tools/apt/addNvidiaSources.sh) | Registers the NVIDIA CUDA APT repository.                                      |
 
 Real-world usage:
-[nioc/README.md](https://github.com/ajakhotia/nioc/blob/main/README.md#L136-L148)
+[nioc/README.md](https://github.com/ajakhotia/nioc/blob/main/README.md)
 
 ### 📃 extractDependencies.sh
 
 [tools/extractDependencies.sh](tools/extractDependencies.sh)
 
-Extracts system package dependencies from a JSON descriptor and prints a normalised, OS-specific
-list. Useful for feeding `apt-get install`, or other package managers, or auditing transitive
-requirements.
+Your system dependencies belong in a reviewable file, not scattered across Dockerfiles, CI
+steps, and README instructions that each list a slightly different set.
+`extractDependencies.sh` reads a JSON descriptor that names package groups per OS release,
+detects the host (Ubuntu, Debian, macOS), and prints the resolved package list, so one file
+feeds `apt-get install` everywhere:
 
 ```json
 {
@@ -362,8 +378,8 @@ requirements.
     },
     {
       "group": "Compilers",
-      "ubuntu:22.04": "clang-19 gcc-13 g++-13 gfortran-13",
-      "ubuntu:24.04": "clang-19 gcc-14 g++-14 gfortran-14",
+      "ubuntu:22.04": "clang-22 gcc-15 g++-15 gfortran-15",
+      "ubuntu:24.04": "clang-22 gcc-15 g++-15 gfortran-15",
       "tag": "all"
     }
   ]
@@ -371,32 +387,45 @@ requirements.
 ```
 
 ```bash
-sh tools/extractDependencies.sh Compilers systemDependencies.json
+sudo apt install -y --no-install-recommends \
+  $(sh tools/extractDependencies.sh "Basics Compilers" systemDependencies.json)
 ```
 
+Query multiple groups in one call, and expand an explicit allow-list of environment variables in
+the package strings with `--expand "ROS_DISTRO"`, which is handy when package names embed a
+distro name.
+
 Real-world usage:
-[nioc/docker/ubuntuDevBase.dockerfile](https://github.com/ajakhotia/nioc/blob/main/docker/ubuntuDevBase.dockerfile#L64-L69)
+[nioc/docker/ubuntuDevBase.dockerfile](https://github.com/ajakhotia/nioc/blob/main/docker/ubuntuDevBase.dockerfile)
 
 ### 🔩 installCMake.sh
 
 [tools/installCMake.sh](tools/installCMake.sh)
 
-Installs a specific CMake version on CI runners or developer machines. Supports multiple
-architectures. Reduces environment drift when system package managers lag behind the required
-version.
+System package managers lag years behind CMake releases. `installCMake.sh` installs an exact
+CMake version from the official Kitware release (x86_64 and aarch64), keeps it under
+`/opt/cmake-<version>`, and symlinks `cmake`, `ctest`, and `cpack` into `/usr/local/bin`:
 
 ```bash
-sudo bash external/infraCommons/tools/installCMake.sh
+sudo bash external/infraCommons/tools/installCMake.sh          # pinned default version
+sudo bash external/infraCommons/tools/installCMake.sh 4.1.0    # or pick one
 ```
 
 Real-world usage:
-[nioc/README.md](https://github.com/ajakhotia/nioc/blob/main/README.md#L114)
+[nioc/README.md](https://github.com/ajakhotia/nioc/blob/main/README.md)
 
 ---
 
 ## ♻️ Reusable GitHub Actions
 
-Reference these composite actions in your workflows using:
+Composite actions distilled from real Docker-centric CI pipelines. They capture the multi-stage
+build-cache-push-verify choreography that every containerized project reimplements. **Each action is
+guarded by its own test workflow in [`.github/workflows`](.github/workflows), so `@main` is a
+tested reference, not a hope.** Together they compose into a pipeline that builds multi-stage
+images with layer caching, sequences dependent workflows, gates merges on whole build matrices,
+and verifies published images before anyone pulls them.
+
+Reference any action as:
 
 ```yaml
 - uses: ajakhotia/infraCommons/.github/actions/<action-name>@main
@@ -404,88 +433,44 @@ Reference these composite actions in your workflows using:
 
 ### 🐳 docker-typical-build-push
 
-Builds and pushes a Docker image stage with sensible defaults for tagging, multi-arch builds, and
-layer caching.
+Builds one stage of a multi-stage Dockerfile and pushes it with sensible tags out of the box:
+the commit SHA, `latest` on the main branch, and semver tags on release. Layer caching is where
+it earns its keep. Pick a backend per call:
+
+- **`gha`** (default): the GitHub Actions cache, with the repository as a single shared scope so
+  every stage and matrix entry feeds one content-addressed pool. Zero setup, but subject to the
+  10 GB per-repo Actions cache limit.
+- **`registry`**: an OCI registry as cache storage, with no practical size limit. Beyond the
+  per-image cache, `shared-cache-from` consumes caches produced by earlier jobs read-only, and
+  `shared-cache-to` maintains read-write caches shared across builds.
 
 ```yaml
 - name: docker-build-and-push-stage
   uses: ajakhotia/infraCommons/.github/actions/docker-typical-build-push@main
   with:
-    dockerfile: <path-to-dockerfile>
-    target-stage: <target-docker-stage>
-    image-name: <fully-qualified-image-name>
+    dockerfile: docker/ubuntu.dockerfile
+    target-stage: deploy
+    image-name: ghcr.io/owner/repo/deploy
+    cache-backend: registry
+    shared-cache-from: |
+      ghcr.io/owner/repo/base:cache
     build-args: |
-      FOO1=BAR1
-      FOO2=BAR2
+      OS_BASE=ubuntu:24.04
 ```
 
-Real-world usage:
-[nioc/.github/workflows/docker-image.yaml](https://github.com/ajakhotia/nioc/blob/main/.github/workflows/docker-image.yaml#L45)
-
-### 🧐 cmake-find-package
-
-Verifies that one or more libraries are installed and discoverable inside a published Docker image.
-Pulls the target image, runs
-[ajakhotia/importTester](https://github.com/ajakhotia/importTester) inside it, and invokes
-`find_package(<library> REQUIRED)` for each entry in `library-names` against the supplied
-`CMAKE_PREFIX_PATH`. Catches packaging regressions before downstream consumers ever pull the image.
-
-```yaml
-- name: find-library
-  uses: ajakhotia/infraCommons/.github/actions/cmake-find-package@main
-  with:
-    library-names: <semicolon-delimited-library-names>
-    prefix-path: <cmake-prefix-path>  # optional
-    image-name: <fully-qualified-image-name>
-```
+Set up a buildx builder once per job (`docker/setup-buildx-action`) before the first call.
 
 Real-world usage:
-[nioc/.github/workflows/docker-image.yaml](https://github.com/ajakhotia/nioc/blob/main/.github/workflows/docker-image.yaml#L181)
-
-### ✨ normalize
-
-Normalises an arbitrary string into a form that is safe to use as part of a Docker image tag.
-
-```yaml
-- name: normalizer
-  id: normalizer-id
-  uses: ajakhotia/infraCommons/.github/actions/normalize@main
-  with:
-    string: ${{ inputs.target-stage-id }}
-
-# Reference the result in further steps:
-- run: echo ${{ steps.normalizer-id.outputs.string }}
-```
-
-Real-world usage:
-[oci-compliant-image-name/action.yaml](.github/actions/oci-compliant-image-name/action.yaml)
-
-### 🏷️ oci-compliant-image-name
-
-Constructs a fully qualified, OCI-compliant image name from a registry, repository, and build name.
-Each component is normalised automatically.
-
-```yaml
-- name: image-name
-  id: image-name
-  uses: ajakhotia/infraCommons/.github/actions/oci-compliant-image-name@main
-  with:
-    build-name: ubuntu:22.04/linux-clang-19/deploy
-    # registry defaults to ghcr.io, repository defaults to the current repo
-
-# Reference the assembled image name in the following steps:
-- run: echo ${{ steps.image-name.outputs.name }}
-  # e.g. ghcr.io/ajakhotia/nioc/ubuntu-22-04/linux-clang-19/deploy
-```
-
-Real-world usage:
-[nioc/.github/workflows/docker-image.yaml](https://github.com/ajakhotia/nioc/blob/main/.github/workflows/docker-image.yaml#L40)
+[nioc/.github/workflows/docker-image.yaml](https://github.com/ajakhotia/nioc/blob/main/.github/workflows/docker-image.yaml)
 
 ### ⏳ wait-for-workflow
 
-Waits for another workflow's run on the same commit to complete, and succeeds immediately when no
-run exists (i.e. the target workflow's trigger filters did not match the event). Sequences
-workflows that share a trigger without duplicating their path filters.
+Workflow B needs the image workflow A publishes, but they fire on the same push. Duplicating A's
+path filters into B is the copy-paste trap again, and the copies will drift.
+`wait-for-workflow` polls for A's run on the same commit. It waits for completion when A was
+triggered, succeeds immediately when A wasn't (GitHub creates run records at event-dispatch time,
+so an absent run reliably means "not triggered"), and reports through the `succeeded` output
+whether fresh artifacts exist for this commit.
 
 ```yaml
 - name: wait-for-dev-base-image
@@ -498,10 +483,89 @@ workflows that share a trigger without duplicating their path filters.
 Real-world usage:
 [nioc/.github/workflows/docker-image.yaml](https://github.com/ajakhotia/nioc/blob/main/.github/workflows/docker-image.yaml)
 
+### 🎯 matrix-aggregate
+
+Branch protection can't require "every entry of the matrix", because the entries appear
+and disappear as the matrix changes. `matrix-aggregate` gives protection a single stable job
+to require: it fails if any run of the upstream matrix did not succeed.
+
+```yaml
+aggregate:
+  if: always()
+  needs: [matrix-job]
+  runs-on: ubuntu-latest
+  steps:
+    - uses: ajakhotia/infraCommons/.github/actions/matrix-aggregate@main
+      with:
+        result: ${{ needs.matrix-job.result }}
+```
+
+Real-world usage:
+[nioc/.github/workflows/docker-image.yaml](https://github.com/ajakhotia/nioc/blob/main/.github/workflows/docker-image.yaml)
+
+### 🧐 cmake-find-package
+
+A published image with a broken CMake package config is a time bomb for downstream consumers.
+This action pulls the image, runs [ajakhotia/importTester](https://github.com/ajakhotia/importTester)
+inside it, and invokes `find_package(<library> REQUIRED)` for each listed library, catching
+packaging regressions before anyone pulls the image.
+
+```yaml
+- name: find-library
+  uses: ajakhotia/infraCommons/.github/actions/cmake-find-package@main
+  with:
+    library-names: <semicolon-delimited-library-names>
+    prefix-path: <cmake-prefix-path>  # optional
+    image-name: <fully-qualified-image-name>
+```
+
+Real-world usage:
+[nioc/.github/workflows/docker-image.yaml](https://github.com/ajakhotia/nioc/blob/main/.github/workflows/docker-image.yaml)
+
+### 🏷️ oci-compliant-image-name
+
+Constructs a fully qualified, OCI-compliant image name from a registry, repository, and build
+name, normalising each component along the way, so matrix values like `ubuntu:22.04/deploy`
+become valid image paths without ad-hoc `sed`.
+
+```yaml
+- name: image-name
+  id: image-name
+  uses: ajakhotia/infraCommons/.github/actions/oci-compliant-image-name@main
+  with:
+    build-name: ubuntu:22.04/linux-clang-22/deploy
+    # registry defaults to ghcr.io, repository defaults to the current repo
+
+- run: echo ${{ steps.image-name.outputs.name }}
+  # e.g. ghcr.io/ajakhotia/nioc/ubuntu-22-04/linux-clang-22/deploy
+```
+
+Real-world usage:
+[nioc/.github/workflows/docker-image.yaml](https://github.com/ajakhotia/nioc/blob/main/.github/workflows/docker-image.yaml)
+
+### ✨ normalize
+
+Sanitises an arbitrary string into a form safe for Docker tags and image-path components. It is
+the building block that `oci-compliant-image-name` uses on each part.
+
+```yaml
+- name: normalizer
+  id: normalizer-id
+  uses: ajakhotia/infraCommons/.github/actions/normalize@main
+  with:
+    string: ${{ inputs.target-stage-id }}
+
+- run: echo ${{ steps.normalizer-id.outputs.string }}
+```
+
+Real-world usage:
+[oci-compliant-image-name/action.yaml](.github/actions/oci-compliant-image-name/action.yaml)
+
 ### 🔄 docker-pull-retag-push
 
-Pulls a public Docker image, retags it, and pushes to a target registry. Used by the snapshot
-workflows to cache upstream images on a schedule.
+Pulls a public image, retags it, and pushes it to your registry. It is the primitive behind the
+snapshot workflows below, and useful anywhere you want an upstream image mirrored under your
+own control.
 
 ```yaml
 - name: cache-ubuntu
@@ -513,3 +577,109 @@ workflows to cache upstream images on a schedule.
 
 Real-world usage:
 [docker-snapshot-monthly.yaml](.github/workflows/docker-snapshot-monthly.yaml)
+
+---
+
+## 📌 Pinned Docker Image Snapshots
+
+`FROM ubuntu:24.04` looks pinned but isn't: the tag mutates upstream every few days, and each
+mutation invalidates every layer built on top of it, forcing full rebuilds for no benefit
+and letting image digests change quietly between CI runs. infraCommons runs scheduled workflows that
+re-publish popular base images to a fixed address on a fixed cadence:
+
+```
+ghcr.io/ajakhotia/infracommons/<cadence>/<image>:<tag>
+```
+
+| Cadence   | Schedule                             |
+|-----------|--------------------------------------|
+| `weekly`  | Every Sunday at 00:00 UTC            |
+| `monthly` | First day of each month at 00:00 UTC |
+
+Currently snapshotted: `ubuntu:rolling`, `ubuntu:latest`, `ubuntu:24.04`, `ubuntu:22.04`; see
+the [snapshot workflows](.github/workflows) for the live matrix.
+
+```dockerfile
+FROM ghcr.io/ajakhotia/infracommons/monthly/ubuntu:24.04
+```
+
+Your base image now changes exactly once a month, on a date you can predict, while still
+receiving upstream updates. Want another image or cadence? Open an
+[issue](https://github.com/ajakhotia/infraCommons/issues) or send a PR updating the workflow
+matrix.
+
+---
+
+## 🔌 Using infraCommons in your project
+
+infraCommons is consumed as a **git submodule**. There is no package manager and no version
+solver, just a pinned commit you control and update on your schedule:
+
+```bash
+git submodule add https://github.com/ajakhotia/infraCommons.git external/infraCommons
+git submodule update --init
+```
+
+Then wire in the pieces you want. [nioc](https://github.com/ajakhotia/nioc) is the complete
+working reference for all of the below.
+
+**1. Include the CMake utilities** in your root `CMakeLists.txt` and create the quality targets:
+
+```cmake
+if(PROJECT_IS_TOP_LEVEL)
+  include(external/infraCommons/cmake/utilities/capnprotoGenerate.cmake)
+  include(external/infraCommons/cmake/utilities/clangFormat.cmake)
+  include(external/infraCommons/cmake/utilities/clangTidy.cmake)
+  include(external/infraCommons/cmake/utilities/exportedTargets.cmake)
+  include(external/infraCommons/cmake/utilities/requireArguments.cmake)
+
+  add_clang_format(TARGET clangFormat VERSION 22)
+  add_clang_tidy(TARGET clangTidy VERSION 22)
+endif()
+
+add_subdirectory(...)   # your modules
+
+if(TARGET clangTidy)
+  add_clang_tidy_build_dependencies(clangTidy)   # after all add_subdirectory calls
+endif()
+```
+
+**2. Symlink the code-quality configs** from your repository root:
+
+```bash
+ln -s external/infraCommons/tools/clang-format-22        .clang-format
+ln -s external/infraCommons/tools/clang-tidy-22          .clang-tidy
+ln -s external/infraCommons/tools/shfmt-3.8-editorconfig .editorconfig
+```
+
+**3. Configure with a pinned toolchain:**
+
+```bash
+cmake -G Ninja -S . -B build \
+  --toolchain external/infraCommons/cmake/toolchains/linux-clang-22.cmake
+```
+
+**4. Reference the composite actions** in your workflows
+([example](https://github.com/ajakhotia/nioc/blob/main/.github/workflows/docker-image.yaml)):
+
+```yaml
+- uses: ajakhotia/infraCommons/.github/actions/docker-typical-build-push@main
+```
+
+**5. Base your Dockerfiles on a pinned snapshot:**
+
+```dockerfile
+FROM ghcr.io/ajakhotia/infracommons/monthly/ubuntu:24.04
+```
+
+From here on, pulling improvements is one command in each consumer:
+
+```bash
+git submodule update --remote external/infraCommons
+```
+
+---
+
+## 📜 License
+
+[MIT](LICENSE). © Anurag Jakhotia. Use it, fork it, ship with it.
