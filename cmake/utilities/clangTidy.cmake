@@ -1,4 +1,5 @@
 include(${CMAKE_CURRENT_LIST_DIR}/collectBuildTargets.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/requireArguments.cmake)
 
 ## Make every compiled target a build dependency of TIDY_TARGET, so the build graph brings the tree
 ## (including generated headers) up to date before clang-tidy parses it; otherwise a missing

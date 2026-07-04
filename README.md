@@ -39,7 +39,7 @@ What's inside:
 - 🧼 **[Code-quality configs](#-code-quality-configs)**: curated `clang-format`, `clang-tidy`,
   and `shfmt` configurations, consumed by symlink so every project stays on the same settings.
 - 🛠️ **[Provisioning scripts](#%EF%B8%8F-toolchain-provisioning-scripts)**: APT sources for GNU,
-  LLVM, and CUDA; JSON-driven system-dependency install; a pinned CMake installer.
+  LLVM, and CUDA; JSON-driven system-dependency resolution; a pinned CMake installer.
 - ♻️ **[Reusable GitHub Actions](#%EF%B8%8F-reusable-github-actions)**: seven composite actions
   for Docker-centric CI pipelines, each guarded by its own test workflow.
 - 📌 **[Pinned Docker image snapshots](#-pinned-docker-image-snapshots)**: weekly and monthly
@@ -364,8 +364,10 @@ Real-world usage:
 Your system dependencies belong in a reviewable file, not scattered across Dockerfiles, CI
 steps, and README instructions that each list a slightly different set.
 `extractDependencies.sh` reads a JSON descriptor that names package groups per OS release,
-detects the host (Ubuntu, Debian, macOS), and prints the resolved package list, so one file
-feeds `apt-get install` everywhere:
+detects the host (any Linux distribution via `/etc/os-release`, plus macOS), and prints the
+resolved package list to stdout. What consumes the list is up to the caller: pass it to
+`apt-get install`, write it to a file, or feed it to any other tooling. One reviewable file
+stays the source of truth everywhere:
 
 ```json
 {
@@ -404,7 +406,8 @@ Real-world usage:
 
 System package managers lag years behind CMake releases. `installCMake.sh` installs an exact
 CMake version from the official Kitware release (x86_64 and aarch64), keeps it under
-`/opt/cmake-<version>`, and symlinks `cmake`, `ctest`, and `cpack` into `/usr/local/bin`:
+`/opt/cmake-<version>` (or a prefix you pass as the second argument), and symlinks `cmake`,
+`ctest`, and `cpack` into `/usr/local/bin`:
 
 ```bash
 sudo bash external/infraCommons/tools/installCMake.sh          # pinned default version
@@ -470,7 +473,8 @@ path filters into B is the copy-paste trap again, and the copies will drift.
 `wait-for-workflow` polls for A's run on the same commit. It waits for completion when A was
 triggered, succeeds immediately when A wasn't (GitHub creates run records at event-dispatch time,
 so an absent run reliably means "not triggered"), and reports through the `succeeded` output
-whether fresh artifacts exist for this commit.
+whether fresh artifacts exist for this commit. Polling cadence and patience are tunable via
+`poll-interval-seconds` (default 30) and `timeout-seconds` (default 3600).
 
 ```yaml
 - name: wait-for-dev-base-image
@@ -508,7 +512,10 @@ Real-world usage:
 A published image with a broken CMake package config is a time bomb for downstream consumers.
 This action pulls the image, runs [ajakhotia/importTester](https://github.com/ajakhotia/importTester)
 inside it, and invokes `find_package(<library> REQUIRED)` for each listed library, catching
-packaging regressions before anyone pulls the image.
+packaging regressions before anyone pulls the image. When the image needs runtime provisioning
+first, the optional `pre-check` / `post-check` inputs source arbitrary bash inside the container
+before and after the check (extract an archive, apt-install a dependency, dump a log), and
+`volumes` mounts extra host paths into it.
 
 ```yaml
 - name: find-library

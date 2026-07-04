@@ -1,3 +1,5 @@
+include(${CMAKE_CURRENT_LIST_DIR}/requireArguments.cmake)
+
 function(add_clang_format)
   set(OPTIONS_ARGUMENTS REQUIRED)
   set(SINGLE_VALUE_ARGUMENTS TARGET VERSION)
