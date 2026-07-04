@@ -1,0 +1,111 @@
+name: test-wait-for-workflow
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  # The snapshot workflow only triggers on schedule/dispatch, so no run of it exists for this
+  # commit. The action must succeed immediately and report succeeded=false.
+  no-run:
+    name: no-run
+    runs-on: ubuntu-latest
+    steps:
+      - name: self-checkout
+        id: self-checkout
+        uses: actions/checkout@v6
+
+      - name: wait
+        id: wait
+        uses: ./.github/actions/wait-for-workflow
+        with:
+          workflow: docker-snapshot-monthly.yaml
+          timeout-seconds: 30
+
+      - name: assert
+        id: assert
+        shell: bash
+        env:
+          SUCCEEDED: ${{ steps.wait.outputs.succeeded }}
+        run: |
+          set -euo pipefail
+          if [[ "${SUCCEEDED}" != "false" ]]; then
+            echo "::error::Expected succeeded='false' for an absent run, got '${SUCCEEDED}'"
+            exit 1
+          fi
+          echo "OK: absent run reported succeeded='false'"
+
+  # test-normalize shares this workflow's triggers, so a run of it exists for this commit and
+  # completes within seconds. The action must wait for it and report succeeded=true.
+  success:
+    name: success
+    runs-on: ubuntu-latest
+    steps:
+      - name: self-checkout
+        id: self-checkout
+        uses: actions/checkout@v6
+
+      - name: wait
+        id: wait
+        uses: ./.github/actions/wait-for-workflow
+        with:
+          workflow: test-normalize.yaml
+          poll-interval-seconds: 10
+          timeout-seconds: 600
+
+      - name: assert
+        id: assert
+        shell: bash
+        env:
+          SUCCEEDED: ${{ steps.wait.outputs.succeeded }}
+        run: |
+          set -euo pipefail
+          if [[ "${SUCCEEDED}" != "true" ]]; then
+            echo "::error::Expected succeeded='true' for a completed run, got '${SUCCEEDED}'"
+            exit 1
+          fi
+          echo "OK: completed run reported succeeded='true'"
+
+  # Waiting on this very workflow can never complete while this job is part of it, so a short
+  # timeout must trip. The action must fail rather than report an output.
+  timeout:
+    name: timeout
+    runs-on: ubuntu-latest
+    steps:
+      - name: self-checkout
+        id: self-checkout
+        uses: actions/checkout@v6
+
+      - name: wait
+        id: wait
+        continue-on-error: true
+        uses: ./.github/actions/wait-for-workflow
+        with:
+          workflow: test-wait-for-workflow.yaml
+          poll-interval-seconds: 5
+          timeout-seconds: 10
+
+      - name: assert-failed
+        id: assert-failed
+        shell: bash
+        env:
+          OUTCOME: ${{ steps.wait.outcome }}
+        run: |
+          set -euo pipefail
+          if [[ "${OUTCOME}" != "failure" ]]; then
+            echo "::error::Expected wait to time out with outcome='failure', got '${OUTCOME}'"
+            exit 1
+          fi
+          echo "OK: in-progress run timed out with outcome='failure'"
