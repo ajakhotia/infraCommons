@@ -38,8 +38,8 @@ What's inside:
   build targets.
 - 🧼 **[Code-quality configs](#-code-quality-configs)**: curated `clang-format`, `clang-tidy`,
   and `shfmt` configurations, consumed by symlink so every project stays on the same settings.
-- 🛠️ **[Provisioning scripts](#%EF%B8%8F-toolchain-provisioning-scripts)**: APT sources for GNU,
-  LLVM, and CUDA; JSON-driven system-dependency resolution; a pinned CMake installer.
+- 🛠️ **[Provisioning scripts](#%EF%B8%8F-toolchain-provisioning-scripts)**: one script registers
+  the GNU, LLVM, NVIDIA, and Kitware APT sources; JSON-driven system-dependency resolution.
 - ♻️ **[Reusable GitHub Actions](#%EF%B8%8F-reusable-github-actions)**: seven composite actions
   for Docker-centric CI pipelines, each guarded by its own test workflow.
 - 📌 **[Pinned Docker image snapshots](#-pinned-docker-image-snapshots)**: weekly and monthly
@@ -345,14 +345,29 @@ way on a laptop, in a Dockerfile, and on a CI runner.
 
 ### 📡 APT Repository Setup
 
-Register the upstream APT sources for modern toolchains, with proper `signed-by` keyrings. Each
-script prompts before touching the system; pass `-y` for non-interactive use.
+[tools/apt/addAptSources.sh](tools/apt/addAptSources.sh)
 
-| Script                                                           | Purpose                                                                        |
-|------------------------------------------------------------------|--------------------------------------------------------------------------------|
-| [`tools/apt/addGNUSources.sh`](tools/apt/addGNUSources.sh)       | Registers upstream GCC/GNU toolchain repositories.                             |
-| [`tools/apt/addLLVMSources.sh`](tools/apt/addLLVMSources.sh)     | Registers `apt.llvm.org`, probing for the suites that exist for your release.  |
-| [`tools/apt/addNvidiaSources.sh`](tools/apt/addNvidiaSources.sh) | Registers the NVIDIA CUDA APT repository.                                      |
+One script registers the upstream APT sources ("taps") that track the latest toolchain
+releases, each through the vendor's own supported mechanism with proper `signed-by` keyrings.
+The taps are OS-version agnostic: each one derives the right vendor source from your release
+and architecture instead of hardcoding a support matrix, so a new Ubuntu release needs no
+script changes.
+
+| Tap       | Source                                                                                                      |
+|-----------|-------------------------------------------------------------------------------------------------------------|
+| `gnu`     | Ubuntu Toolchain PPA (Debian: backports) for the latest GCC.                                                |
+| `llvm`    | `apt.llvm.org`, probing for the suites that exist for your release.                                         |
+| `nvidia`  | NVIDIA CUDA repository for your OS release and architecture (x86_64, Jetson arm64, server sbsa). |
+| `kitware` | `apt.kitware.com` for the latest CMake (Ubuntu only).                                                       |
+
+```bash
+sudo bash tools/apt/addAptSources.sh -y                # all taps
+sudo bash tools/apt/addAptSources.sh -y llvm nvidia    # just these taps
+```
+
+The script prompts before touching the system; pass `-y` for non-interactive use. It only
+registers sources and never installs toolchains: run `apt-get update` afterwards and install
+packages resolved through `extractDependencies.sh` below.
 
 Real-world usage:
 [nioc/README.md](https://github.com/ajakhotia/nioc/blob/main/README.md)
@@ -399,23 +414,6 @@ distro name.
 
 Real-world usage:
 [nioc/docker/ubuntuDevBase.dockerfile](https://github.com/ajakhotia/nioc/blob/main/docker/ubuntuDevBase.dockerfile)
-
-### 🔩 installCMake.sh
-
-[tools/installCMake.sh](tools/installCMake.sh)
-
-System package managers lag years behind CMake releases. `installCMake.sh` installs an exact
-CMake version from the official Kitware release (x86_64 and aarch64), keeps it under
-`/opt/cmake-<version>` (or a prefix you pass as the second argument), and symlinks `cmake`,
-`ctest`, and `cpack` into `/usr/local/bin`:
-
-```bash
-sudo bash external/infraCommons/tools/installCMake.sh          # pinned default version
-sudo bash external/infraCommons/tools/installCMake.sh 4.1.0    # or pick one
-```
-
-Real-world usage:
-[nioc/README.md](https://github.com/ajakhotia/nioc/blob/main/README.md)
 
 ---
 
