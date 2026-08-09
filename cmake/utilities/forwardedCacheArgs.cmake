@@ -149,5 +149,16 @@ function(compose_forwarded_cache_args)
     list(APPEND CFCA_RESULT "-DCMAKE_TOOLCHAIN_FILE:FILEPATH=${CMAKE_TOOLCHAIN_FILE}")
   endif()
 
+  # Newer CMake assigns CMAKE_INSTALL_PREFIX its own descriptive help string even when the value
+  # arrives via -D or a preset's cacheVariables, so the command-line marker misses it and the
+  # children would fall back to the platform default prefix. A caller-chosen prefix is
+  # distinguished from that default by CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT, so sweep it
+  # up explicitly.
+  if(CMAKE_INSTALL_PREFIX
+      AND NOT CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT
+      AND NOT "CMAKE_INSTALL_PREFIX" IN_LIST CFCA_FORWARDED_NAMES)
+    list(APPEND CFCA_RESULT "-DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}")
+  endif()
+
   set(${CFCA_PARAM_OUTPUT_VARIABLE} "${CFCA_RESULT}" PARENT_SCOPE)
 endfunction()
