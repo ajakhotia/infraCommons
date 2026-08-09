@@ -1,18 +1,24 @@
 include(${CMAKE_CURRENT_LIST_DIR}/requireArguments.cmake)
 
-## Records the names of every cache entry the user defined on the configure command line, which
-## is also how a preset's cacheVariables arrive, into OUTPUT_VARIABLE as a persistent INTERNAL
-## cache entry.
+## Records the names of the cache entries the caller handed this build tree, into
+## OUTPUT_VARIABLE as a persistent INTERNAL cache entry.
 ##
 ## Usage:
 ##   capture_user_cache_entries(OUTPUT_VARIABLE <var>)
 ##
-## Call this before project(). Command-line entries are identified by the help string CMake
-## assigns them, and that marker is fragile: platform initialization inside project() and any
-## later set(<name> ... CACHE <type> <doc>) replaces the help string of an untyped -D entry,
-## silently removing it from the identifiable set. The replaced help strings also persist into
-## reconfigures, so the capture unions with its previous result to stay deterministic across
-## runs: entries join the set when first seen and never leave, mirroring cache semantics.
+## Call this before project(). Provenance rests on two structural facts of the cache, never on
+## help-string text, which CMake rewords between versions:
+##   1. On the first configure of a fresh build tree, before project() runs, the cache holds
+##      exactly what the caller supplied (-D definitions, a preset's cacheVariables, -C files,
+##      --toolchain) plus CMake's own bookkeeping, and the bookkeeping is typed INTERNAL or
+##      STATIC. Every entry outside those types is therefore the caller's and is recorded.
+##   2. An untyped -D definition enters the cache with type UNINITIALIZED, which no project
+##      declaration produces, so definitions added on later configures are unioned in on every
+##      run. A typed -D added to an already-configured tree is indistinguishable from a project
+##      declaration and is the one unsupported corner; reconfigure fresh for that.
+## Entries join the recorded set when first seen and never leave, mirroring cache semantics. A
+## tree configured before this mechanism existed has a polluted cache and no recorded set; that
+## case aborts with instructions rather than guessing.
 function(capture_user_cache_entries)
   set(OPTIONS_ARGUMENTS "")
   set(SINGLE_VALUE_ARGUMENTS OUTPUT_VARIABLE)
@@ -26,13 +32,31 @@ function(capture_user_cache_entries)
 
   require_arguments(PREFIX CUCE_PARAM ARGUMENTS OUTPUT_VARIABLE)
 
-  set(CUCE_NAMES ${${CUCE_PARAM_OUTPUT_VARIABLE}})
   get_cmake_property(CUCE_CACHE_ENTRIES CACHE_VARIABLES)
 
-  foreach(CUCE_NAME IN LISTS CUCE_CACHE_ENTRIES)
-    get_property(CUCE_HELP CACHE ${CUCE_NAME} PROPERTY HELPSTRING)
+  if(DEFINED CACHE{${CUCE_PARAM_OUTPUT_VARIABLE}})
+    set(CUCE_NAMES ${${CUCE_PARAM_OUTPUT_VARIABLE}})
+  elseif(DEFINED CACHE{CMAKE_CACHEFILE_DIR})
+    message(FATAL_ERROR
+      "capture_user_cache_entries: this build tree was configured before caller cache entries "
+      "were recorded, so they can no longer be told apart from the project's own. Configure "
+      "into a fresh build tree, or delete CMakeCache.txt first.")
+  else()
+    set(CUCE_NAMES "")
 
-    if(CUCE_HELP STREQUAL "No help, variable specified on the command line.")
+    foreach(CUCE_NAME IN LISTS CUCE_CACHE_ENTRIES)
+      get_property(CUCE_TYPE CACHE ${CUCE_NAME} PROPERTY TYPE)
+
+      if(NOT CUCE_TYPE STREQUAL "INTERNAL" AND NOT CUCE_TYPE STREQUAL "STATIC")
+        list(APPEND CUCE_NAMES ${CUCE_NAME})
+      endif()
+    endforeach()
+  endif()
+
+  foreach(CUCE_NAME IN LISTS CUCE_CACHE_ENTRIES)
+    get_property(CUCE_TYPE CACHE ${CUCE_NAME} PROPERTY TYPE)
+
+    if(CUCE_TYPE STREQUAL "UNINITIALIZED")
       list(APPEND CUCE_NAMES ${CUCE_NAME})
     endif()
   endforeach()
@@ -52,19 +76,22 @@ endfunction()
 ##     OUTPUT_VARIABLE <var>
 ##     [LIST_SEPARATOR <sep>]
 ##     [FORWARD_VARIABLES <name1> <name2> ...]
-##     [USER_ENTRIES <name1> <name2> ...])
+##     [USER_ENTRIES <name1> <name2> ...]
+##     [EXCLUDE_PREFIXES <prefix1> <prefix2> ...])
 ##
 ## Three sources feed the list, in order:
 ##   1. FORWARD_VARIABLES: the effective value of each named variable at the call site. This is
 ##      the super build's policy toward its children; compose a value (e.g. CMAKE_PREFIX_PATH)
 ##      by setting the variable before calling. Unset and empty variables are skipped.
 ##   2. USER_ENTRIES: names previously recorded by capture_user_cache_entries, forwarded at
-##      their current cache value. This is the reliable route for user intent; the help-string
-##      sweep below degrades after project() runs (see capture_user_cache_entries).
-##   3. Every cache entry still carrying the command-line help-string marker, plus
-##      CMAKE_TOOLCHAIN_FILE when one is in use. Everything else in the cache is a derived
-##      conclusion (configure probes, project internals) that each child must re-derive for
-##      itself and is therefore never forwarded.
+##      their current cache value. Names matching any EXCLUDE_PREFIXES entry are dropped: a
+##      super build passes its own option namespace here, because those names are its interface,
+##      consumed at its level, and are never the children's business.
+##   3. Two names with documented special semantics are swept explicitly as a backstop:
+##      CMAKE_TOOLCHAIN_FILE when one is in use, and a caller-chosen CMAKE_INSTALL_PREFIX
+##      (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT distinguishes it from the platform
+##      default). Everything else in the cache is a derived conclusion (configure probes,
+##      project internals) that each child must re-derive for itself and is never forwarded.
 ##
 ## A name covered by an earlier source is excluded from the later ones, so a policy
 ## composition stays authoritative for its own name. List values are escaped with
@@ -74,7 +101,7 @@ endfunction()
 function(compose_forwarded_cache_args)
   set(OPTIONS_ARGUMENTS "")
   set(SINGLE_VALUE_ARGUMENTS OUTPUT_VARIABLE LIST_SEPARATOR)
-  set(MULTI_VALUE_ARGUMENTS FORWARD_VARIABLES USER_ENTRIES)
+  set(MULTI_VALUE_ARGUMENTS FORWARD_VARIABLES USER_ENTRIES EXCLUDE_PREFIXES)
 
   cmake_parse_arguments("CFCA_PARAM"
     "${OPTIONS_ARGUMENTS}"
@@ -108,21 +135,26 @@ function(compose_forwarded_cache_args)
     list(APPEND CFCA_FORWARDED_NAMES ${CFCA_NAME})
   endforeach()
 
-  get_cmake_property(CFCA_CACHE_ENTRIES CACHE_VARIABLES)
   set(CFCA_USER_NAMES ${CFCA_PARAM_USER_ENTRIES})
-
-  foreach(CFCA_NAME IN LISTS CFCA_CACHE_ENTRIES)
-    get_property(CFCA_HELP CACHE ${CFCA_NAME} PROPERTY HELPSTRING)
-
-    if(CFCA_HELP STREQUAL "No help, variable specified on the command line.")
-      list(APPEND CFCA_USER_NAMES ${CFCA_NAME})
-    endif()
-  endforeach()
-
   list(REMOVE_DUPLICATES CFCA_USER_NAMES)
 
   foreach(CFCA_NAME IN LISTS CFCA_USER_NAMES)
     if(CFCA_NAME IN_LIST CFCA_FORWARDED_NAMES)
+      continue()
+    endif()
+
+    set(CFCA_EXCLUDED FALSE)
+
+    foreach(CFCA_PREFIX IN LISTS CFCA_PARAM_EXCLUDE_PREFIXES)
+      string(FIND "${CFCA_NAME}" "${CFCA_PREFIX}" CFCA_PREFIX_POSITION)
+
+      if(CFCA_PREFIX_POSITION EQUAL 0)
+        set(CFCA_EXCLUDED TRUE)
+        break()
+      endif()
+    endforeach()
+
+    if(CFCA_EXCLUDED)
       continue()
     endif()
 
