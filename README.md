@@ -625,6 +625,34 @@ matrix.
 
 ---
 
+## 🐧 Published Ubuntu Base Images
+
+The snapshots above pin the upstream bits, and the base images go one step further. Built by
+[docker-base-image.yaml](.github/workflows/docker-base-image.yaml) from
+[docker/ubuntuBase.dockerfile](docker/ubuntuBase.dockerfile), each base image starts from the
+snapshot of its cadence, registers all of the vendor apt taps via
+[addAptSources.sh](tools/apt/addAptSources.sh) (gnu, llvm, nvidia, kitware), and runs a full
+upgrade after the taps are in place. The result is an Ubuntu image that already knows where the
+current toolchains live, while package selection stays entirely with consumers.
+
+```
+ghcr.io/ajakhotia/infracommons/<cadence>-base/<normalized-os>:<tag>
+```
+
+For example, the weekly base image for Ubuntu 24.04 is
+`ghcr.io/ajakhotia/infracommons/weekly-base/ubuntu-24-04:latest`. The OS segment is normalized
+for OCI compliance (`ubuntu:24.04` becomes `ubuntu-24-04`), and every push is also tagged
+`sha-<commit>`. Images are published for `ubuntu:22.04`, `ubuntu:24.04`, and `ubuntu:26.04` on
+both the `weekly` and the `monthly` cadence. Each cadence rebuilds right after the matching
+snapshot refresh, sequenced by the [wait-for-workflow](.github/actions/wait-for-workflow)
+action rather than by guessing at cron offsets.
+
+Downstream projects will eventually `FROM` these images directly instead of repeating the tap
+registration in their own Dockerfiles, which reduces their base stages to installing the
+packages they actually need.
+
+---
+
 ## 🔌 Using infraCommons in your project
 
 infraCommons is consumed as a **git submodule**. There is no package manager and no version
