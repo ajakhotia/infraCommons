@@ -412,6 +412,16 @@ Query multiple groups in one call, and expand an explicit allow-list of environm
 the package strings with `--expand "ROS_DISTRO"`, which is handy when package names embed a
 distro name.
 
+Resolution rules:
+
+- A requested group is matched by exact name. A group absent from the descriptor resolves to
+  nothing, with a warning on stderr. This is deliberate: a caller may derive its group list from
+  elsewhere (for example, a build list of external projects, one group per project name), and
+  entries that need no system packages simply contribute nothing.
+- A group that exists but has no entry for the detected OS key is a hard error: the descriptor
+  is incomplete for that OS, and a silent skip would surface later as a missing package deep in
+  a build.
+
 Real-world usage:
 [nioc/docker/ubuntuDevBase.dockerfile](https://github.com/ajakhotia/nioc/blob/main/docker/ubuntuDevBase.dockerfile)
 
