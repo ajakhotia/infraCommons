@@ -30,7 +30,7 @@ jobs:
     steps:
       - name: self-checkout
         id: self-checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: find-package
         id: find-package
@@ -50,7 +50,7 @@ jobs:
     steps:
       - name: self-checkout
         id: self-checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: find-package
         id: find-package
