@@ -69,6 +69,15 @@ inputs:
       Docker build arguments to forward to the build.
       Example: "OS_BASE=ubuntu:24.04"
 
+  platforms:
+    required: false
+    description: |
+      Target platform(s) for the build, forwarded verbatim to buildx.
+      Empty (the default) builds for the builder's native platform. A
+      non-native platform requires QEMU binfmt handlers on the runner
+      (docker/setup-qemu-action) in addition to the buildx builder.
+      Example: "linux/arm64"
+
 runs:
   using: "composite"
   steps:
@@ -131,6 +140,7 @@ runs:
         file: ${{ inputs.dockerfile }}
         target: ${{ inputs.target-stage }}
         push: true
+        platforms: ${{ inputs.platforms }}
         tags: ${{ steps.docker-metadata.outputs.tags }}
         labels: ${{ steps.docker-metadata.outputs.labels }}
         cache-from: |
@@ -151,6 +161,7 @@ runs:
         file: ${{ inputs.dockerfile }}
         target: ${{ inputs.target-stage }}
         push: true
+        platforms: ${{ inputs.platforms }}
         tags: ${{ steps.docker-metadata.outputs.tags }}
         labels: ${{ steps.docker-metadata.outputs.labels }}
         cache-from: |
