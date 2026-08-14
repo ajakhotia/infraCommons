@@ -59,7 +59,7 @@ runs:
   steps:
     - name: checkout-import-tester
       id: checkout-import-tester
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         repository: ajakhotia/importTester
         path: importTester

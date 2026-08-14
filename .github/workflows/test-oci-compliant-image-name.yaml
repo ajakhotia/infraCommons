@@ -44,7 +44,7 @@ jobs:
     steps:
       - name: self-checkout
         id: self-checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: build-image-name
         id: build-image-name
